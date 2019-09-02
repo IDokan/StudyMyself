@@ -1,0 +1,4 @@
+Original string = cccc
+Compressed string = 1011'0101'1010'1101'0110'0000'
+Uncompressed string = cccc
+Strings Match
