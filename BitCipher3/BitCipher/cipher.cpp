@@ -22,18 +22,8 @@ namespace
 		" e",
 		"taoi",
 		"nshrdlcu",
-		"mwfgypdvkjxqz"
+		"mwfgypdvkjxqz"	// 13
 	};
-}
-
-int numBits(int value)
-{
-	int requiredBits = 1;
-	while(value >>= 1)
-	{
-		++requiredBits;
-	}
-	return requiredBits;
 }
 
 char TryGetHuffmanChar(int groupBit, int indexBit)
@@ -49,8 +39,18 @@ char TryGetHuffmanChar(int groupBit, int indexBit)
 	return groups[groupBit].at(indexBit);
 }
 
+int numBits(int value) noexcept
+{
+	int requiredBits = 1;
+	while(value >>= 1)
+	{
+		++requiredBits;
+	}
+	return requiredBits;
+}
+
 // If value is a hover value, make push it to ground.
-int GetCountToFloorValue(int value)
+int GetCountToFloorValue(int value) noexcept
 {
 	int count = 0;
 	while (value % 2 == 0)
@@ -61,14 +61,14 @@ int GetCountToFloorValue(int value)
 	return count;
 }
 
-char GetBinaryValue(char bits, char mask)
+char GetBinaryValue(char bits, char mask) noexcept
 {
 	int count = GetCountToFloorValue(mask);
 	return (bits & mask) >> count;
 }
 
 // Return decoded value given character.
-char GetEncodedChar(char character)
+char GetEncodedChar(char character) noexcept
 {
 	for (int countGroup = 0; countGroup < NUMGROUPS; ++countGroup)
 	{
@@ -84,9 +84,39 @@ char GetEncodedChar(char character)
 std::vector<char> encode(std::string uncompressed)
 {
 	std::vector<char> compressed;
+	constexpr char initialBitPosition = sizeof(char)*4 - 1;
+	int bitPosition = initialBitPosition;
+	char container = 0;
 	for (const auto & element : uncompressed)
 	{
-		compressed.push_back(GetEncodedChar(element));
+		char tmpCharacter = GetEncodedChar(element);
+		char numCharacter = numBits(tmpCharacter);
+		bitPosition -= numCharacter;
+
+
+		if (bitPosition > 0)
+		{
+			container |= tmpCharacter << bitPosition;
+		}
+		else if (bitPosition < 0)
+		{
+			// under implementing
+			container |= tmpCharacter >> (initialBitPosition + bitPosition);
+			bitPosition += 8;
+			compressed.push_back(container);
+			container = tmpCharacter << (1 + bitPosition);	// wrong code
+			
+		}
+		else if (bitPosition == 0)
+		{
+			container |= tmpCharacter;
+			compressed.push_back(container);
+			bitPosition = initialBitPosition;
+			container = 0;
+		}
+
+		
+		compressed.push_back(tmpCharacter);
 	}
 	return compressed;
 }
@@ -100,25 +130,6 @@ std::string decode(std::vector<char> compressed)
 	char mask;
 	for (const auto & element : compressed)
 	{
-		//int result = GetBinaryValue(element, 0xA0);
-		//switch (result)
-		//{
-		//case 0:
-		//	mask = 0x20;
-		//	break;
-		//case 1:
-		//	mask = 0x30;
-		//	break;
-		//case 2:
-		//	mask = 0x38;
-		//	break;
-		//case 3:
-		//	mask = 0x3C;
-		//	break;
-		//default:
-		//	break;
-		//}
-
 		char result = GetBinaryValue(element, 0x18);
 		switch (result)
 		{
@@ -135,13 +146,9 @@ std::string decode(std::vector<char> compressed)
 		{
 			c = TryGetHuffmanChar(result, index);
 		}
-		catch (const std::string& str)
+		catch(const char* exception)
 		{
-			std::cout << str;
-		}
-		catch(const char* str)
-		{
-			std::cout << str;
+			std::cout << exception;
 		}
 		str += c;
 	}
