@@ -67,7 +67,7 @@ void test8() { runTest( "aardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvar
 
 
 int main (int argc, char ** argv) {
-	int test_num = -1;
+	int test_num = 8;
 
 	typedef void(*Test)(void);
 	Test Tests[] = {

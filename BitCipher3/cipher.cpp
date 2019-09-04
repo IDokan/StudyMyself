@@ -15,31 +15,11 @@ Creation date: 09/02/2019
 #include "cipher.h"
 #include <iostream> // std::cout
 
-
-// Helper function for DEBUG
-void printBit(std::vector<char> data) {
-	for (char c : data) {
-		for (int bitIndex = 7; bitIndex >= 0; --bitIndex) {
-			if (c & (1 << bitIndex)) {
-				std::cout << "1";
-			}
-			else {
-				std::cout << "0";
-			}
-			if (bitIndex % 4 == 0) {
-				std::cout << '\'';
-			}
-		}
-	}
-	std::cout << std::endl;
-}
-
-
 namespace
 {
 	static const int NUMGROUPS = 4;
 	static std::string groups[NUMGROUPS] = {
-		" e",	// 2	/0b01
+		" e",	// 2	/0b1
 		"taoi",	// 4	/0b11
 		"nshrdlcu",	// 7	/ 0b111
 		"mwfgypdvkjxqz"	// 13	/ 0b1111
@@ -88,32 +68,14 @@ char GetBinaryValue(char bits, char mask) noexcept
 }
 
 // Return decoded value given character.
-char GetEncodedChar(char character, int& sizeOfChatacter) noexcept
+char GetEncodedChar(char character) noexcept
 {
 	for (int countGroup = 0; countGroup < NUMGROUPS; ++countGroup)
 	{
 		const int charLocation = groups[countGroup].find(character);
 		if(charLocation != std::string::npos)
 		{
-			switch (countGroup)
-			{
-			case 0:
-				sizeOfChatacter = 3;
-				break;
-			case 1:
-				sizeOfChatacter = 4;
-				break;
-			case 2:
-				sizeOfChatacter = 5;
-				break;
-			case 3:
-				sizeOfChatacter = 6;
-				break;
-			default:
-				sizeOfChatacter = 0;
-				break;
-			}
-			return (countGroup << (countGroup + 1)) | charLocation;
+			return (countGroup << numBits(charLocation)) | charLocation;
 		}
 	}
 	return '\0';
@@ -129,9 +91,8 @@ std::vector<char> encode(std::string uncompressed)
 	char container = 0;
 	for (const auto & element : uncompressed)
 	{
-		int numCharacter;
-
-		char tmpCharacter = GetEncodedChar(element, numCharacter);
+		char tmpCharacter = GetEncodedChar(element);
+		char numCharacter = numBits(tmpCharacter);
 		bitPosition -= numCharacter;
 
 
@@ -146,9 +107,6 @@ std::vector<char> encode(std::string uncompressed)
 			compressed.push_back(container);
 			container = tmpCharacter << (8 - abs(bitPosition ));	// wrong code
 			bitPosition += 8;
-
-			//Test
-			printBit(compressed);
 		}
 		else if (bitPosition == 0)
 		{
@@ -156,9 +114,6 @@ std::vector<char> encode(std::string uncompressed)
 			compressed.push_back(container);
 			bitPosition = initialBitPosition;
 			container = 0;
-
-			//Test
-			printBit(compressed);
 		}
 	}
 	compressed.push_back(container);
