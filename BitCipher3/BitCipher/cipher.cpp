@@ -16,33 +16,14 @@ Creation date: 09/02/2019
 #include <iostream> // std::cout
 
 
-// Helper function for DEBUG
-void printBit(std::vector<char> data) {
-	for (char c : data) {
-		for (int bitIndex = 7; bitIndex >= 0; --bitIndex) {
-			if (c & (1 << bitIndex)) {
-				std::cout << "1";
-			}
-			else {
-				std::cout << "0";
-			}
-			if (bitIndex % 4 == 0) {
-				std::cout << '\'';
-			}
-		}
-	}
-	std::cout << std::endl;
-}
-
-
 namespace
 {
 	static const int NUMGROUPS = 4;
 	static std::string groups[NUMGROUPS] = {
-		" e",	// 2	/0b01
+		" e",	// 2	/0b1
 		"taoi",	// 4	/0b11
 		"nshrdlcu",	// 7	/ 0b111
-		"mwfgypdvkjxqz"	// 13	/ 0b1111
+		"mwfgypbvkjxqz"	// 13	/ 0b1111
 	};
 }
 
@@ -62,7 +43,7 @@ char TryGetHuffmanChar(int groupBit, int indexBit)
 int numBits(int value) noexcept
 {
 	int requiredBits = 1;
-	while(value >>= 1)
+	while (value >>= 1)
 	{
 		++requiredBits;
 	}
@@ -81,7 +62,7 @@ int GetCountToFloorValue(int value) noexcept
 	return count;
 }
 
-char GetBinaryValue(char bits, char mask) noexcept
+char GetBinaryValue(const unsigned char bits, const unsigned char mask) noexcept
 {
 	int count = GetCountToFloorValue(mask);
 	return (bits & mask) >> count;
@@ -93,7 +74,7 @@ char GetEncodedChar(char character, int& sizeOfChatacter) noexcept
 	for (int countGroup = 0; countGroup < NUMGROUPS; ++countGroup)
 	{
 		const int charLocation = groups[countGroup].find(character);
-		if(charLocation != std::string::npos)
+		if (charLocation != std::string::npos)
 		{
 			switch (countGroup)
 			{
@@ -122,33 +103,29 @@ char GetEncodedChar(char character, int& sizeOfChatacter) noexcept
 std::vector<char> encode(std::string uncompressed)
 {
 	std::vector<char> compressed;
-	
-	constexpr char initialBitPosition = sizeof(char)*8;
+
+	constexpr char initialBitPosition = sizeof(char) * 8;
 	int bitPosition = initialBitPosition;
 
 	char container = 0;
-	for (const auto & element : uncompressed)
+	for (const auto& element : uncompressed)
 	{
 		int numCharacter;
 
 		char tmpCharacter = GetEncodedChar(element, numCharacter);
 		bitPosition -= numCharacter;
 
-
+		// Fill the container and if it is full, push_back in vector<char>
 		if (bitPosition > 0)
 		{
-			container |= tmpCharacter << (bitPosition );
+			container |= tmpCharacter << (bitPosition);
 		}
 		else if (bitPosition < 0)
 		{
-			// under implementing
-			container |= tmpCharacter >> (abs(bitPosition ));
+			container |= tmpCharacter >> (abs(bitPosition));
 			compressed.push_back(container);
-			container = tmpCharacter << (8 - abs(bitPosition ));	// wrong code
+			container = tmpCharacter << (8 - abs(bitPosition));	// wrong code
 			bitPosition += 8;
-
-			//Test
-			printBit(compressed);
 		}
 		else if (bitPosition == 0)
 		{
@@ -156,9 +133,6 @@ std::vector<char> encode(std::string uncompressed)
 			compressed.push_back(container);
 			bitPosition = initialBitPosition;
 			container = 0;
-
-			//Test
-			printBit(compressed);
 		}
 	}
 	compressed.push_back(container);
@@ -168,30 +142,93 @@ std::vector<char> encode(std::string uncompressed)
 // Now Implementing
 std::string decode(std::vector<char> compressed)
 {
-	return std::string("test");
 	std::string str;
 	str.clear();
 
+	constexpr char groupBitMask = 0b11;
+	char groupBitPosition = 8;
 	char mask;
-	for (const auto & element : compressed)
+
+	// What should be a condition statement?
+	int iterator = 0;
+	char element = compressed.at(iterator);
+	const int sizeOfVector = compressed.size();
+	
+	while (iterator != sizeOfVector)
 	{
-		char result = GetBinaryValue(element, 0x18);
+		char result;
+		groupBitPosition -= 2;
+		if (groupBitPosition == -1)
+		{
+			result = GetBinaryValue(element, 0b1) << 1;
+			if (++iterator == sizeOfVector)
+			{
+				return str;
+			}
+			element = compressed.at(iterator);
+			groupBitPosition += 8;
+			result |= GetBinaryValue(element, 0x80);
+		}
+		else if (groupBitPosition == -2)
+		{
+			if (++iterator == sizeOfVector)
+			{
+				return str;
+			}
+			element = compressed.at(iterator);
+			groupBitPosition += 8;
+			result = GetBinaryValue(element, char(groupBitMask << groupBitPosition));
+		}
+		else
+		{
+			result = GetBinaryValue(element, char(groupBitMask << groupBitPosition));
+		}
+
+		// Is there any better solutions?
 		switch (result)
 		{
+		case 0b00:
+			mask = 0b1;
+			break;
+		case 0b01:
+			mask = 0b11;
+			break;
 		case 0b10:
-			mask = 0x07;
+			mask = 0b111;
+			break;
+		case 0b11:
+			mask = 0b1111;
 			break;
 		default:
 			mask = 0x00;
 			break;
 		}
-		char c = '\0';
-		int index = GetBinaryValue(element, mask);
+
+		const int numOfMask = numBits(mask);
+		groupBitPosition -= numOfMask;
+
+		char index = 0;
+		if (groupBitPosition < 0)
+		{
+			index = GetBinaryValue(element << abs(groupBitPosition), mask);
+			if (++iterator == sizeOfVector)
+			{
+				return str;
+			}
+			element = compressed.at(iterator);
+			index |= GetBinaryValue(element, mask <<= groupBitPosition += 8);
+		}
+		else
+		{
+			mask <<= groupBitPosition;
+			index = GetBinaryValue(element, mask);
+		}
+		char c = 0;
 		try
 		{
 			c = TryGetHuffmanChar(result, index);
 		}
-		catch(const char* exception)
+		catch (const char* exception)
 		{
 			std::cout << exception;
 		}
