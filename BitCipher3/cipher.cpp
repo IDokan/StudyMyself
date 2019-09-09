@@ -19,8 +19,8 @@ Creation date: 09/02/2019
 
 namespace
 {
-	static const int NUMGROUPS = 4;
-	static std::string groups[NUMGROUPS] = {
+	const int NUMGROUPS = 4;
+	std::string groups[NUMGROUPS] = {
 		" e",	// 2	/0b1
 		"taoi",	// 4	/0b11
 		"nshrdlcu",	// 8	/ 0b111
@@ -72,12 +72,12 @@ char GetBinaryValue(const unsigned char bits, const unsigned char mask) noexcept
 // Return decoded value given character.
 char GetEncodedCharAndSize(char character, char& sizeOfCharacter) noexcept
 {
-	for (int countGroup = 0; countGroup < NUMGROUPS; ++countGroup)
+	for (char countGroup = 0; countGroup < NUMGROUPS; ++countGroup)
 	{
 		const size_t charLocation = groups[countGroup].find(character);
 		if (charLocation != std::string::npos)
 		{
-			sizeOfCharacter = countGroup + 3;
+			sizeOfCharacter = countGroup + 0b11;
 			return (countGroup << (countGroup + 1)) | char(charLocation);
 		}
 	}
@@ -131,7 +131,7 @@ std::string decode(std::vector<char> compressed)
 
 	constexpr char initialBitPosition = 8;
 	constexpr char groupBitMask = 0b11;
-	char groupBitPosition = 8;
+	char groupBitPosition = initialBitPosition;
 	char mask;
 
 	char iterator = 0;
@@ -144,7 +144,7 @@ std::string decode(std::vector<char> compressed)
 		groupBitPosition -= 2;
 		if (groupBitPosition == -1)
 		{
-			result = GetBinaryValue(element, 0b1) << 1;
+			result = GetBinaryValue(element, 0x01) << 1;
 			if (++iterator == sizeOfVector)
 			{
 				return str;
@@ -168,9 +168,9 @@ std::string decode(std::vector<char> compressed)
 			result = GetBinaryValue(element, char(groupBitMask << groupBitPosition));
 		}
 
-		mask = int(std::pow(2, result + 1) - 1);
+		mask = char(std::pow(2, result + 1) - 1);
 
-		const char numOfMask = numBits(mask);
+		const char numOfMask = char(numBits(mask));
 		groupBitPosition -= numOfMask;
 
 		char index = 0;
