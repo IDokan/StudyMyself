@@ -51,9 +51,9 @@ int numBits(int value) noexcept
 }
 
 // If value is a hover value, make push it to ground.
-int GetCountToFloorValue(int value) noexcept
+char GetCountToFloorValue(char value) noexcept
 {
-	int count = 0;
+	char count = 0;
 	while (value % 2 == 0)
 	{
 		value >>= 1;
@@ -69,32 +69,32 @@ char GetBinaryValue(const unsigned char bits, const unsigned char mask) noexcept
 }
 
 // Return decoded value given character.
-char GetEncodedChar(char character, int& sizeOfChatacter) noexcept
+char GetEncodedCharAndSize(char character, char& sizeOfCharacter) noexcept
 {
 	for (int countGroup = 0; countGroup < NUMGROUPS; ++countGroup)
 	{
-		const int charLocation = groups[countGroup].find(character);
+		const size_t charLocation = groups[countGroup].find(character);
 		if (charLocation != std::string::npos)
 		{
 			switch (countGroup)
 			{
 			case 0:
-				sizeOfChatacter = 3;
+				sizeOfCharacter = 3;
 				break;
 			case 1:
-				sizeOfChatacter = 4;
+				sizeOfCharacter = 4;
 				break;
 			case 2:
-				sizeOfChatacter = 5;
+				sizeOfCharacter = 5;
 				break;
 			case 3:
-				sizeOfChatacter = 6;
+				sizeOfCharacter = 6;
 				break;
 			default:
-				sizeOfChatacter = 0;
+				sizeOfCharacter = 0;
 				break;
 			}
-			return (countGroup << (countGroup + 1)) | charLocation;
+			return (countGroup << (countGroup + 1)) | char(charLocation);
 		}
 	}
 	return '\0';
@@ -104,16 +104,16 @@ std::vector<char> encode(std::string uncompressed)
 {
 	std::vector<char> compressed;
 
-	constexpr char initialBitPosition = sizeof(char) * 8;
-	int bitPosition = initialBitPosition;
+	constexpr char initialBitPosition = 8;
+	char bitPosition = initialBitPosition;
 
 	char container = 0;
 	for (const auto& element : uncompressed)
 	{
-		int numCharacter;
+		char sizeOfCharacter;
 
-		char tmpCharacter = GetEncodedChar(element, numCharacter);
-		bitPosition -= numCharacter;
+		const char tmpCharacter = GetEncodedCharAndSize(element, sizeOfCharacter);
+		bitPosition -= sizeOfCharacter;
 
 		// Fill the container and if it is full, push_back in vector<char>
 		if (bitPosition > 0)
@@ -124,8 +124,8 @@ std::vector<char> encode(std::string uncompressed)
 		{
 			container |= tmpCharacter >> (abs(bitPosition));
 			compressed.push_back(container);
-			container = tmpCharacter << (8 - abs(bitPosition));	// wrong code
-			bitPosition += 8;
+			container = tmpCharacter << (initialBitPosition - abs(bitPosition));	// wrong code
+			bitPosition += initialBitPosition;
 		}
 		else if (bitPosition == 0)
 		{
@@ -139,20 +139,21 @@ std::vector<char> encode(std::string uncompressed)
 	return compressed;
 }
 
-// Now Implementing
+
 std::string decode(std::vector<char> compressed)
 {
 	std::string str;
 	str.clear();
 
+	constexpr char initialBitPosition = 8;
 	constexpr char groupBitMask = 0b11;
 	char groupBitPosition = 8;
 	char mask;
 
 	// What should be a condition statement?
-	int iterator = 0;
+	char iterator = 0;
 	char element = compressed.at(iterator);
-	const int sizeOfVector = compressed.size();
+	const size_t sizeOfVector = compressed.size();
 	
 	while (iterator != sizeOfVector)
 	{
@@ -166,7 +167,7 @@ std::string decode(std::vector<char> compressed)
 				return str;
 			}
 			element = compressed.at(iterator);
-			groupBitPosition += 8;
+			groupBitPosition += initialBitPosition;
 			result |= GetBinaryValue(element, 0x80);
 		}
 		else if (groupBitPosition == -2)
@@ -176,7 +177,7 @@ std::string decode(std::vector<char> compressed)
 				return str;
 			}
 			element = compressed.at(iterator);
-			groupBitPosition += 8;
+			groupBitPosition += initialBitPosition;
 			result = GetBinaryValue(element, char(groupBitMask << groupBitPosition));
 		}
 		else
@@ -204,19 +205,20 @@ std::string decode(std::vector<char> compressed)
 			break;
 		}
 
-		const int numOfMask = numBits(mask);
+		const char numOfMask = numBits(mask);
 		groupBitPosition -= numOfMask;
 
 		char index = 0;
 		if (groupBitPosition < 0)
 		{
 			index = GetBinaryValue(element << abs(groupBitPosition), mask);
-			if (++iterator == sizeOfVector)
+			if (++iterator == int(sizeOfVector))
 			{
 				return str;
 			}
 			element = compressed.at(iterator);
-			index |= GetBinaryValue(element, mask <<= groupBitPosition += 8);
+			groupBitPosition += initialBitPosition;
+			index |= GetBinaryValue(element, mask <<= groupBitPosition);
 		}
 		else
 		{
