@@ -14,6 +14,7 @@ Creation date: 09/02/2019
 #include <string>	// std::string
 #include "cipher.h"
 #include <iostream> // std::cout
+#include <cmath>	// pow
 
 
 namespace
@@ -22,7 +23,7 @@ namespace
 	static std::string groups[NUMGROUPS] = {
 		" e",	// 2	/0b1
 		"taoi",	// 4	/0b11
-		"nshrdlcu",	// 7	/ 0b111
+		"nshrdlcu",	// 8	/ 0b111
 		"mwfgypbvkjxqz"	// 13	/ 0b1111
 	};
 }
@@ -76,24 +77,7 @@ char GetEncodedCharAndSize(char character, char& sizeOfCharacter) noexcept
 		const size_t charLocation = groups[countGroup].find(character);
 		if (charLocation != std::string::npos)
 		{
-			switch (countGroup)
-			{
-			case 0:
-				sizeOfCharacter = 3;
-				break;
-			case 1:
-				sizeOfCharacter = 4;
-				break;
-			case 2:
-				sizeOfCharacter = 5;
-				break;
-			case 3:
-				sizeOfCharacter = 6;
-				break;
-			default:
-				sizeOfCharacter = 0;
-				break;
-			}
+			sizeOfCharacter = countGroup + 3;
 			return (countGroup << (countGroup + 1)) | char(charLocation);
 		}
 	}
@@ -124,7 +108,7 @@ std::vector<char> encode(std::string uncompressed)
 		{
 			container |= tmpCharacter >> (abs(bitPosition));
 			compressed.push_back(container);
-			container = tmpCharacter << (initialBitPosition - abs(bitPosition));	// wrong code
+			container = tmpCharacter << (initialBitPosition - abs(bitPosition));
 			bitPosition += initialBitPosition;
 		}
 		else if (bitPosition == 0)
@@ -150,7 +134,6 @@ std::string decode(std::vector<char> compressed)
 	char groupBitPosition = 8;
 	char mask;
 
-	// What should be a condition statement?
 	char iterator = 0;
 	char element = compressed.at(iterator);
 	const size_t sizeOfVector = compressed.size();
@@ -185,25 +168,7 @@ std::string decode(std::vector<char> compressed)
 			result = GetBinaryValue(element, char(groupBitMask << groupBitPosition));
 		}
 
-		// Is there any better solutions?
-		switch (result)
-		{
-		case 0b00:
-			mask = 0b1;
-			break;
-		case 0b01:
-			mask = 0b11;
-			break;
-		case 0b10:
-			mask = 0b111;
-			break;
-		case 0b11:
-			mask = 0b1111;
-			break;
-		default:
-			mask = 0x00;
-			break;
-		}
+		mask = int(std::pow(2, result + 1) - 1);
 
 		const char numOfMask = numBits(mask);
 		groupBitPosition -= numOfMask;
