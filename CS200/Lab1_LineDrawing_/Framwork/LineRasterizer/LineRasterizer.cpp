@@ -19,6 +19,25 @@ Image gImage{ WIDTH, HEIGHT, BEAUTY_BUSH_PINK };
 
 void SETPIXEL(int column, int row, Color intensity) { gImage.SetPixel(column, row, intensity); }
 
+// Draw axis align line
+void DrawFixedLine(int a0, int a1, int b, Color intensity, bool isHorizontal = true)
+{
+	if (isHorizontal)
+	{
+		for (int a = a0; a <= a1; ++a)
+		{
+			SETPIXEL(a, b, intensity);
+		}
+	}
+	else
+	{
+		for (int a = a0; a <= a1 + 1; ++a)
+		{
+			SETPIXEL(b, a, intensity);
+		}
+	}
+}
+
 void DrawLine(int x0, int y0, int x1, int y1, Color intensity);
 
 int main(void)
@@ -65,28 +84,6 @@ int main(void)
 	return 0;
 }
 
-// Draw axis align line
-void DrawFixedLine(int a0, int a1, int b, Color intensity, bool isHorizontal = true)
-{
-	if (isHorizontal)
-	{
-
-		for (int a = a0; a < a1; ++a)
-		{
-			SETPIXEL(a, b, intensity);
-		}
-
-
-	}
-	else
-	{
-		for (int a = a0; a < a1; ++a)
-		{
-			SETPIXEL(b, a, intensity);
-		}
-	}
-}
-
 void DrawLine(int x0, int y0, int x1, int y1, Color intensity)
 {
 	if (x1 < x0)
@@ -106,52 +103,92 @@ void DrawLine(int x0, int y0, int x1, int y1, Color intensity)
 	}
 	float slope = float(dy) / dx;
 
-	int incrementInside;
-	int incrementOutside;
-	int yIncrement = 1;
-
-	if (slope > 1)
-	{
-		incrementInside = 2 * (dy - dx);
-		incrementOutside = 2 * -dx;
-	}
-	else if (slope <= 1 && slope > 0)
-	{
-		incrementInside = 2 * dy;
-		incrementOutside = 2 * (dy - dx);
-	}
-	else if (slope < 0 && slope >= -1)
-	{
-		incrementInside = -2 * (dy - dx);
-		incrementOutside = 2 * dy;
-		yIncrement = -yIncrement;
-	}
-	else
-	{
-		incrementInside = 2 * -dx;
-		incrementOutside = 2 * (dy - dx);
-		yIncrement = -yIncrement;
-	}
+	int incrementClose1;
+	int incrementCloseINF;
+	int distance;
 
 	int x = x0;
 	int y = y0;
-	int d = 2 * dy - dx;		// Initial value of d
-	// Set first pixel
-	SETPIXEL(x, y, intensity);
 
-	while (x < x1)
+	if (slope > 1)
 	{
-		if (d <= 0)
-		{
-			d += incrementInside;
-			++x;
-		}
-		else
-		{
-			d += incrementOutside;
-			++x;
-			y += yIncrement;
-		}
+		distance = dy - 2 * dx;
+		incrementClose1 = 2 * (dy - dx);
+		incrementCloseINF = 2 * -dx;
 		SETPIXEL(x, y, intensity);
+
+		while (y <= y1) {
+			if (distance < 0) {
+				distance += incrementClose1;
+				y++;
+				x++;
+			}
+			else {
+				distance += incrementCloseINF;
+				y++;
+			}
+			SETPIXEL(x, y, intensity);
+		}
+	}
+	else if (slope <= 1 && slope > 0)
+	{
+		distance = 2 * dy - dx;
+		incrementClose1 = 2 * (dy - dx);
+		incrementCloseINF = 2 * dy;
+		SETPIXEL(x, y, intensity);
+
+		while (x < x1) {
+			if (distance <= 0) {
+				distance += incrementCloseINF;
+				x++;
+			}
+			else {
+				distance += incrementClose1;
+				x++;
+				y++;
+			}
+			SETPIXEL(x, y, intensity);
+		}
+	}
+	else if (slope < 0 && slope > -1)
+	{
+		distance = 2 * dy + dx;
+		incrementClose1 = 2 * (dy + dx);
+		incrementCloseINF = 2 * dy;
+		SETPIXEL(x, y, intensity);
+
+		while (x < x1) {
+			if (distance >= 0) {
+				distance += incrementCloseINF;
+				x++;
+			}
+			else {
+				distance += incrementClose1;
+				x++;
+				y--;
+			}
+			SETPIXEL(x, y, intensity);
+		}
+	}
+	else
+	{
+		distance = -dy;
+		incrementClose1 = 2 * (dy + dx);
+		incrementCloseINF = 2 * dx;
+		x -= 1;
+		y += 1;
+		SETPIXEL(x, y, intensity);
+		while (y >= y1 + 1) {
+			if (distance < 0) {
+				distance += incrementCloseINF;
+				y--;
+			}
+			else {
+				distance += incrementClose1;
+				x++;
+				y--;
+			}
+			SETPIXEL(x, y, intensity);
+		}
 	}
 }
