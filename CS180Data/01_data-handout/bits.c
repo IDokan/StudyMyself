@@ -266,7 +266,7 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return x & ~x;
+  return !(x & ~x+1);
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -296,7 +296,13 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  return 2;
+	const unsigned expMask = 0xFF << 23;
+	if ((uf & expMask)>>23 == 0xFF)
+	{
+		return uf;
+	}
+	uf += 0x01 << 23;
+  return uf;
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -311,7 +317,18 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+	const unsigned expMask = 0xFF << 23;
+	const unsigned fracMask = (~0) + (1<<23);
+	unsigned exp = (uf & expMask) - 127;
+	unsigned frac = uf & fracMask;
+
+	unsigned E = 1;
+	while(exp > 0)
+	{
+		--exp;
+		E *= 2;
+	}
+  return exp * (1+(frac/(fracMask+1)));
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -327,5 +344,15 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+	x += 127;
+	if (x<=0)
+	{
+		return 0;
+	}
+	// I'm not sure 256 is correct number.
+	if (x > 256)
+	{
+		return 0xFF << 23;
+	}
+    return x << 23;
 }
