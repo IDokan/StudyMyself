@@ -188,7 +188,7 @@ int bitXor(int x, int y) {
  *   Rating: 1
  */
 int tmin(void) {
-  return ~(1) + 1;
+  return 1<<31;
 }
 //2
 /*
@@ -199,6 +199,7 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
+	x = ~x;
   return (!(x+x)) & (!!x);
 }
 /* 
@@ -210,7 +211,10 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  return 2;
+	const unsigned mask = 0xAA | 0xAA << 8 | 0xAA << 16 | 0xAA << 24;
+	x &= mask;
+	x ^= mask;
+  return !x;
 }
 /* 
  * negate - return -x 
@@ -233,7 +237,7 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-  return !(x + (~0x30 + 1) >> 31)&&(x+ (~0x3B) >> 31);
+  return (((x + (~0x2f)) >> 31) ^ ((x + (~0x39)) >> 31)) & (!(x & (~0x3F)));
 }
 /* 
  * conditional - same as x ? y : z 
@@ -254,7 +258,21 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return ((x + (~y + 2)) >> 31);
+	// get sign of X
+	const unsigned signX = x >> 31 & 1;
+	// get sign of Y
+	const unsigned signY = y >> 31 & 1;
+	// get are they same?
+	const unsigned isSame = !(signX ^ signY);
+	// get situation when sign of Y is positive, they differ
+	const unsigned signResult = ((!(isSame)) & signX);
+	// result of x - y(1-> y>x, 0 -> x>=y)
+	const unsigned substitutionResult = y + ((~x) + 1);
+
+	// two possibilities
+	// 1. X > 0 && Y < 0
+	// 2. when their sign bit is same, subs result is negative
+	return (signResult) | ((!(substitutionResult >> 31)) & isSame);
 }
 //4
 /* 
@@ -266,7 +284,7 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return !(x & ~x+1);
+  return !(x & ((~x)+1));
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -281,6 +299,7 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
+
   return 0;
 }
 //float
