@@ -316,12 +316,29 @@ int howManyBits(int x) {
  */
 unsigned floatScale2(unsigned uf) {
 	const unsigned expMask = 0xFF << 23;
-	if ((uf & expMask)>>23 == 0xFF)
+	// extract exponent part
+	const unsigned exponent = (uf & expMask) >> 23;
+	// When exponent is 0, literally scale 2
+	if (exponent == 0x00)
+	{
+		const unsigned fracMask = ~0 + (1 << 24);
+		const unsigned fractional = uf & fracMask;
+		if (fractional)
+		{
+			uf = uf & (~fracMask);
+			uf = uf | (fractional << 1);
+			return uf;
+		}
+		return uf;
+	}
+	// When argument is NaN, return argument
+	if (exponent == 0xFF)
 	{
 		return uf;
 	}
+	// Scale 2 on exponent portion.
 	uf += 0x01 << 23;
-  return uf;
+	return uf;
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -337,17 +354,39 @@ unsigned floatScale2(unsigned uf) {
  */
 int floatFloat2Int(unsigned uf) {
 	const unsigned expMask = 0xFF << 23;
-	const unsigned fracMask = (~0) + (1<<23);
-	unsigned exp = (uf & expMask) - 127;
+	const unsigned fracMask = (~0) + (1 << 23);
+	int exp = ((uf & expMask) >> 23) - 127;
 	unsigned frac = uf & fracMask;
-
+	const int signBit = uf >> 31;
 	unsigned E = 1;
-	while(exp > 0)
+	unsigned mantissa = (1 + (frac / ((fracMask + 1) / 2)));
+	//Anything out of range (including NaN and infinity) should return 0x80000000u.
+	if(exp >= 128)
 	{
-		--exp;
-		E *= 2;
+		return 0x80000000u;
 	}
-  return exp * (1+(frac/(fracMask+1)));
+	// most of cases normally muliply by 2 
+	else if (exp >= 0)
+	{
+		E = 1 << exp;
+	}
+	// deal with denormalized floating representation
+	else if (exp == -127)
+	{
+		mantissa = ((frac / (fracMask + 1)));
+	}
+	// just a fractional value return 0.
+	else
+	{
+		return 0;
+	}
+	int result = E * mantissa;
+	// When uf is negative, negate uf.
+	if (signBit != 0)
+	{
+		result = -result;
+	}
+	return result;
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -369,7 +408,7 @@ unsigned floatPower2(int x) {
 		return 0;
 	}
 	// I'm not sure 256 is correct number.
-	if (x > 256)
+	if (x >= 255)
 	{
 		return 0xFF << 23;
 	}

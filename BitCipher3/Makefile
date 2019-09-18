@@ -15,7 +15,7 @@ all : $(UNITTESTS) $(MEMTESTS)
 $(PRG):
 	g++ -o $(PRG) $(DRIVER_FILES) $(SOURCE_FILES) $(GCCFLAGS) -g
 $(PRGD):
-	g++ -o $(PRG) $(DRIVER_FILES) $(SOURCE_FILES) $(GCCFLAGS) -O2
+	g++ -o $(PRGD) $(DRIVER_FILES) $(SOURCE_FILES) $(GCCFLAGS) -O2
 
 $(UNITTESTS) : $(PRG)
 	@echo "running test$@"

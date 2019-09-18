@@ -1,0 +1,2 @@
+Original string = c
+Compressed string = 1011'0000'
