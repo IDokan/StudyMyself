@@ -211,7 +211,7 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-	const unsigned mask = 0xAA | 0xAA << 8 | 0xAA << 16 | 0xAA << 24;
+	const int mask = 0xAA | 0xAA << 8 | 0xAA << 16 | 0xAA << 24;
 	x &= mask;
 	x ^= mask;
   return !x;
@@ -259,15 +259,15 @@ int conditional(int x, int y, int z) {
  */
 int isLessOrEqual(int x, int y) {
 	// get sign of X
-	const unsigned signX = x >> 31 & 1;
+	const int signX = x >> 31 & 1;
 	// get sign of Y
-	const unsigned signY = y >> 31 & 1;
+	const int signY = y >> 31 & 1;
 	// get are they same?
-	const unsigned isSame = !(signX ^ signY);
+	const int isSame = !(signX ^ signY);
 	// get situation when sign of Y is positive, they differ
-	const unsigned signResult = ((!(isSame)) & signX);
+	const int signResult = ((!(isSame)) & signX);
 	// result of x - y(1-> y>x, 0 -> x>=y)
-	const unsigned substitutionResult = y + ((~x) + 1);
+	const int substitutionResult = y + ((~x) + 1);
 
 	// two possibilities
 	// 1. X > 0 && Y < 0
@@ -284,7 +284,16 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return !(x & ((~x)+1));
+	// 0 - 0 = 0 - 0 = Zero
+	// 1 - 1 = 0 - 1 = negative num
+	// 2 - 2 = 0 - 2 = negative num
+	// It works, when x >= 0
+	const int negatedX = ~x + 1;
+	const int substitutionResult = ((x + negatedX));
+	const int result = (substitutionResult + negatedX) >> 31;
+	// Case 2: if x is negative return 0, which means I should deal with x < 0
+	// In order to do it, I add (((x >> 31))))+1.
+	return ((result) | (((x >> 31))))+1;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -356,10 +365,11 @@ int floatFloat2Int(unsigned uf) {
 	const unsigned expMask = 0xFF << 23;
 	const unsigned fracMask = (~0) + (1 << 23);
 	int exp = ((uf & expMask) >> 23) - 127;
-	unsigned frac = uf & fracMask;
+	const unsigned frac = uf & fracMask;
 	const int signBit = uf >> 31;
 	unsigned E = 1;
 	unsigned mantissa = (1 + (frac / ((fracMask + 1) / 2)));
+	int result;
 	//Anything out of range (including NaN and infinity) should return 0x80000000u.
 	if(exp >= 128)
 	{
@@ -380,7 +390,7 @@ int floatFloat2Int(unsigned uf) {
 	{
 		return 0;
 	}
-	int result = E * mantissa;
+	result = E * mantissa;
 	// When uf is negative, negate uf.
 	if (signBit != 0)
 	{

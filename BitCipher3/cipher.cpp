@@ -13,7 +13,6 @@ Creation date: 09/02/2019
 #include <vector>	// std::vector
 #include <string>	// std::string
 #include "cipher.h"
-#include <iostream> // std::cout
 #include <cmath>	// pow
 
 
@@ -197,7 +196,7 @@ std::string decode(std::vector<char> compressed)
 		}
 		catch (const char* exception)
 		{
-			std::cout << exception;
+			return str;
 		}
 		str += c;
 	}
