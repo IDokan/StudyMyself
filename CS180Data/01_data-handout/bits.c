@@ -200,6 +200,7 @@ int tmin(void) {
  */
 int isTmax(int x) {
 	x = ~x;
+	// rhs is a safe guard to prevent 0.
   return (!(x+x)) & (!!x);
 }
 /* 
@@ -237,6 +238,7 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
+	// x - 0x30 >= 0 && x - 0x39 <= 0 ..... last condition is to prevent too big number.
   return (((x + (~0x2f)) >> 31) ^ ((x + (~0x39)) >> 31)) & (!(x & (~0x3F)));
 }
 /* 
@@ -247,6 +249,8 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
+	// if x is true, x gonna be a 0xFFFFFFFF.
+	// x is false, x gonna be a 0x0.
   x = ~(!!x) + 1; 
   return (x&y)|(~x&z);
 }
@@ -308,6 +312,24 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
+	int bitPosition = 31;
+	int tmin = 1 << 31;
+	int result = 0;
+	int flag = 1;
+	int xPlusTmin;
+	int tmax;
+	int tmaxMinusX;
+	int bothResult;
+	
+	xPlusTmin = !((x + tmin) >> 31); // < 0
+	tmax = ~tmin;
+	tmaxMinusX = !!((tmax + (~x + 1)) >> 31); // >= 0
+	bothResult = xPlusTmin & tmaxMinusX;
+	result = (bitPosition) & bothResult & flag;
+	flag = (!result) & 1;
+	tmin = tmin >> 1;
+	bitPosition = bitPosition - 1;
+
 
   return 0;
 }
@@ -412,12 +434,14 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
+	// exponent value
 	x += 127;
+	// the result is too small to be represented as a denorm, return 0
 	if (x<=0)
 	{
 		return 0;
 	}
-	// I'm not sure 256 is correct number.
+	// return 0. If too large, return +INF.
 	if (x >= 255)
 	{
 		return 0xFF << 23;
