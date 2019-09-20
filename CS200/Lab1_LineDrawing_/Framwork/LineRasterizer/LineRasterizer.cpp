@@ -1,4 +1,10 @@
-﻿#include <CS200/Image.hpp>
+﻿/*
+sinil.gang
+Line Rasterizer
+CS200
+Fall 2019
+*/
+#include <CS200/Image.hpp>
 #include <cstdlib>
 #include <algorithm>
 

@@ -1,7 +1,10 @@
 /* 
  * CS:APP Data Lab 
  * 
- * <Please put your name and userid here>
+ * Name:	Sinil Kang
+ * ID:		sinil.gang
+ * Class:	CS180
+ * Term: 	Fall 2019
  * 
  * bits.c - Source file with your solutions to the Lab.
  *          This is the file you will hand in to your instructor.
@@ -179,6 +182,7 @@ NOTES:
  *   Rating: 1
  */
 int bitXor(int x, int y) {
+	// return x | y and remove when they are both 0.
   return (~(~x&~y)) & (~(x&y));
 }
 /* 
@@ -250,8 +254,9 @@ int isAsciiDigit(int x) {
  */
 int conditional(int x, int y, int z) {
 	// if x is true, x gonna be a 0xFFFFFFFF.
-	// x is false, x gonna be a 0x0.
-  x = ~(!!x) + 1; 
+	// 	  x is false, x gonna be a 0x0.
+  x = (!!x); 
+  x = ~x + 1;
   return (x&y)|(~x&z);
 }
 /* 
@@ -268,7 +273,7 @@ int isLessOrEqual(int x, int y) {
 	const int signY = y >> 31 & 1;
 	// get are they same?
 	const int isSame = !(signX ^ signY);
-	// get situation when sign of Y is positive, they differ
+	// get is sign of Y positive? when they differ
 	const int signResult = ((!(isSame)) & signX);
 	// result of x - y(1-> y>x, 0 -> x>=y)
 	const int substitutionResult = y + ((~x) + 1);
@@ -312,26 +317,31 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
-	int bitPosition = 31;
-	int tmin = 1 << 31;
-	int result = 0;
-	int flag = 1;
-	int xPlusTmin;
-	int tmax;
-	int tmaxMinusX;
-	int bothResult;
-	
-	xPlusTmin = !((x + tmin) >> 31); // < 0
-	tmax = ~tmin;
-	tmaxMinusX = !!((tmax + (~x + 1)) >> 31); // >= 0
-	bothResult = xPlusTmin & tmaxMinusX;
-	result = (bitPosition) & bothResult & flag;
-	flag = (!result) & 1;
-	tmin = tmin >> 1;
-	bitPosition = bitPosition - 1;
+	// make x as positive num
+	const int sign = x >> 31;
+	int bit16, bit8, bit4, bit2, bit1;
+	x = (sign & (~x)) | (~sign & x);
 
+	// Get minimum bits to represent X
+	bit16 = !!(x >> 16) << 4;
+	x = x >> bit16;
 
-  return 0;
+	bit8 = !!(x >> 8) << 3;
+	x = x >> bit8;
+
+	bit4 = !!(x >> 4) << 2;
+	x = x >> bit4;
+
+	bit2 = !!(x >> 2) << 1;
+	x = x >> bit2;
+
+	bit1 = !!(x >> 1);
+	x = x >> bit1;
+
+	// the reason why add 1 is
+	// 1. when x is positive, 1 more bit needed because it's two's complement
+	// 2. when x is negative, 1 bit is disappeared when I flipped in line 317
+	return bit16 + bit8 + bit4 + bit2 + bit1 + x + 1;
 }
 //float
 /* 
