@@ -1,0 +1,4 @@
+Original string = en
+Compressed string = 0011'0000'0000'0000'
+Uncompressed string = en
+Strings Match

@@ -1,0 +1,10 @@
+1,4c1,4
+< Original string = c
+< Compressed string = 1011'0000'
+< Uncompressed string = c
+< Strings Match
+---
+> Original string = en
+> Compressed string = 0011'0000'0000'0000'
+> Uncompressed string = en
+> Strings Match
