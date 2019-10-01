@@ -1,4 +1,10 @@
-﻿#include <CS200/Image.hpp>
+﻿/*	1. sinil.gang
+ *	2. Lab2: Triangle Rasterizer
+ *	3. CS200
+ *	4. Fall 2019
+ */
+
+#include <CS200/Image.hpp>
 #include <cstdlib>
 
 using namespace CS200;
@@ -36,6 +42,10 @@ struct Point
     {
         return Vector(x - rhs.x, y - rhs.y);
     }
+	int operator*(const Vector& v) const
+    {
+		return x * v.x + y * v.y;
+    }
 
     int x;
     int y;
@@ -61,9 +71,9 @@ int main(void)
 
 bool AreTheyAllInside(int* decisions)
 {
-	return (decisions[0] > 0) &&
-		(decisions[1] > 0) &&
-		(decisions[2] > 0);
+	return (decisions[0] >= 0) &&
+		(decisions[1] >= 0) &&
+		(decisions[2] >= 0);
 }
 
 void InitialArray(int* arr, int* arr2, const int size)
@@ -74,9 +84,34 @@ void InitialArray(int* arr, int* arr2, const int size)
 	}
 }
 
+Point GetSmallPoint(const Point& p1, const Point& p2, const Point& p3)
+{
+	Point result;
+	result.x = (p1.x < p2.x) ? p1.x : p2.x;
+	result.x = (result.x < p3.x) ? result.x : p3.x;
+	result.y = (p1.y < p2.y) ? p1.y : p2.y;
+	result.y = (result.y < p3.y) ? result.y : p3.y;
+
+	return result;
+}
+
+Point GetLargePoint(const Point& p1, const Point& p2, const Point& p3)
+{
+	Point result;
+	result.x = (p1.x > p2.x) ? p1.x : p2.x;
+	result.x = (result.x > p3.x) ? result.x : p3.x;
+	result.y = (p1.y > p2.y) ? p1.y : p2.y;
+	result.y = (result.y > p3.y) ? result.y : p3.y;
+
+	return result;
+}
+
 void DrawTriangle(const Point & p1, const Point & p2,
     const Point & p3, Color intensity)
 {
+	const Point smallPoint = GetSmallPoint(p1, p2, p3);
+	const Point largePoint = GetLargePoint(p1, p2, p3);
+	
 	// Given Lines
 	const Vector line1{ p3 - p1 };
 	const Vector line2{ p2 - p3 };
@@ -88,26 +123,31 @@ void DrawTriangle(const Point & p1, const Point & p2,
 	const Vector nLine3{ line3.y, - line3.x };
 	
 	const int size = 3;
-	int startingDecision[size]{ -(p3.x * nLine1.x + p3.y * nLine1.y), -(p2.x * nLine2.x + p2.y * nLine2.y), -(p1.x * nLine3.x+p1.y*nLine3.y) };
-	int tempDecision[size] = { startingDecision[0], startingDecision[1], startingDecision[2] };
+	int startingDecision[size]
+	{
+		smallPoint * nLine1 - p3 * nLine1,
+		smallPoint * nLine2 - p2 * nLine2,
+		smallPoint * nLine3 - p1 * nLine3
+	};
+	int tempDecision[size]{ startingDecision[0], startingDecision[1], startingDecision[2] };
 
-	for (int row = 0; row < HEIGHT; ++row)
+	for (int row = smallPoint.y; row < largePoint.y; ++row)
 	{
 		// Initialize tempDecision as initial value of starting decision.
 		InitialArray(tempDecision, startingDecision, size);
 		
-		for (int column = 0; column < WIDTH; ++column)
+		for (int column = smallPoint.x; column < largePoint.x; ++column)
 		{
 			if (AreTheyAllInside(tempDecision))
 			{
 				SETPIXEL(column, row, intensity);
 			}
-			// TODO: Add Comment
+			// Add X value
 			tempDecision[0] += (nLine1.x);
 			tempDecision[1] += (nLine2.x);
 			tempDecision[2] += (nLine3.x);
 		}
-		// TODO: Add Comment
+		// Add Y value
 		startingDecision[0] += (nLine1.y);
 		startingDecision[1] += (nLine2.y);
 		startingDecision[2] += (nLine3.y);

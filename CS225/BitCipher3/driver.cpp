@@ -55,7 +55,7 @@ void runTest( std::string originalText )
 	}
 }
 
-void test0() { runTest( "en" ); }
+void test0() { runTest( "nopqrstu" ); }
 void test1() { runTest( "cc" ); }
 void test2() { runTest( "ccc"); }
 void test3() { runTest( "cccc" ); }

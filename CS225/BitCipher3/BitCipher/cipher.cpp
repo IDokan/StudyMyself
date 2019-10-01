@@ -12,9 +12,8 @@ Creation date: 09/02/2019
 
 #include <vector>	// std::vector
 #include <string>	// std::string
-#include "cipher.h"
-#include <iostream> // std::cout
 #include <cmath>	// pow
+#include "cipher.h"
 
 
 namespace
@@ -26,19 +25,35 @@ namespace
 		"nshrdlcu",	// 8	/ 0b111
 		"mwfgypbvkjxqz"	// 13	/ 0b1111
 	};
+
+	std::string data = { " etaoinshrdlcumwfgypbvkjxqz" };
+}
+
+// return index matched group bit
+// For example,
+// when 0 come, 0 out.
+// when 1 come, 2 out.
+// when 2 come, 6 out.
+// when 3 come, 14 out.
+// when 4 come, 30 out.
+int GetGroupIndexOffset(int groupBit)
+{
+	int offSet = 0;
+	for (int i = 0; i < groupBit; ++i)
+	{
+		offSet += 2<<i;
+	}
+	return offSet;
 }
 
 char TryGetHuffmanChar(int groupBit, int indexBit)
 {
-	if (groupBit < 0 || groupBit >= NUMGROUPS)
-	{
-		throw "GroupBit is out of range!";
-	}
-	if (indexBit < 0 || indexBit >= int(groups[groupBit].length()))
+	const unsigned int stringIndex = indexBit + GetGroupIndexOffset(groupBit);
+	if (stringIndex >= data.length())
 	{
 		throw "IndexBit is out of range!";
 	}
-	return groups[groupBit].at(indexBit);
+	return data.at(stringIndex);
 }
 
 int numBits(int value) noexcept
@@ -51,7 +66,7 @@ int numBits(int value) noexcept
 	return requiredBits;
 }
 
-// If value is a hover value, make push it to ground.
+// If value is a hover value, make pull it to ground.
 char GetCountToFloorValue(int value) noexcept
 {
 	char count = 0;
@@ -66,20 +81,26 @@ char GetCountToFloorValue(int value) noexcept
 char GetBinaryValue(const unsigned char bits, const unsigned char mask) noexcept
 {
 	const char count = GetCountToFloorValue(mask);
-	return (bits & mask) >> count;
+	return char((bits & mask) >> count);
 }
 
 // Return decoded value given character.
 char GetEncodedCharAndSize(char character, char& sizeOfCharacter) noexcept
 {
-	for (unsigned char countGroup = 0; countGroup < NUMGROUPS; ++countGroup)
+	size_t charLocation = data.find(character);
+	
+	if (charLocation != std::string::npos)
 	{
-		const size_t charLocation = groups[countGroup].find(character);
-		if (charLocation != std::string::npos)
+		int countGroup = 0;
+		// How can I make 12 into 2 and 6
+		while(GetGroupIndexOffset(countGroup + 1) <= int(charLocation))
 		{
-			sizeOfCharacter = char(countGroup + 0x03);
-			return (countGroup << unsigned char(countGroup + 1)) | char(charLocation);
+			++countGroup;
 		}
+		charLocation -= GetGroupIndexOffset(countGroup);
+		
+		sizeOfCharacter = char(countGroup + 0x03);
+		return char((countGroup << char(countGroup+1)) | char(charLocation));
 	}
 	return '\0';
 }
@@ -99,11 +120,12 @@ std::vector<char> encode(std::string uncompressed)
 		const char tmpCharacter = GetEncodedCharAndSize(element, sizeOfCharacter);
 		bitPosition = char(bitPosition - sizeOfCharacter);
 
-		// Fill the container and if it is full, push_back in vector<char>
+		// Fill the container in normally
 		if (bitPosition > 0)
 		{
 			container = char(container | tmpCharacter << (bitPosition));
 		}
+		// if it is full or over than capacity, then push_back in vector<char>
 		else if (bitPosition < 0)
 		{
 			container = char(container | tmpCharacter >> (abs(bitPosition)));
@@ -130,9 +152,9 @@ std::string decode(std::vector<char> compressed)
 	str.clear();
 
 	constexpr char initialBitPosition = 8;
-	constexpr char groupBitMask = 0x03;
-	char groupBitPosition = initialBitPosition;
-	char mask;
+	constexpr char groupBitMask = 0x03;		// 0b11, group bit is always 2bit
+	char bitPosition = initialBitPosition;
+	char indexBitMask;
 
 	size_t iterator = 0;
 	char element = compressed.at(iterator);
@@ -140,64 +162,72 @@ std::string decode(std::vector<char> compressed)
 
 	while (iterator != sizeOfVector)
 	{
-		char result;
-		groupBitPosition = char(groupBitPosition - 2);
-		if (groupBitPosition == -1)
+		char groupBit;
+		// First of all, since group bit is always 2 bit, substituted by 2 at current Group Bit Position
+		bitPosition = char(bitPosition - 2);
+		// If substitution groupBit is -1, I've read every bit in current byte and I should read more 1 bit.
+		if (bitPosition == -1)
 		{
-			result = char(GetBinaryValue(element, 0x01) << 1);
+			// I will read left one bit in current bit
+			groupBit = char(GetBinaryValue(element, 0x01) << 1);
 			if (++iterator == sizeOfVector)
 			{
 				return str;
 			}
 			element = compressed.at(iterator);
-			groupBitPosition = char(groupBitPosition + initialBitPosition);
-			result |= GetBinaryValue(element, unsigned char(0x80));
+			bitPosition = char(bitPosition + initialBitPosition);
+			// And Get a First bit in next bit
+			groupBit = char(groupBit | GetBinaryValue(element, char(0x80)));
 		}
-		else if (groupBitPosition == -2)
+		// If substitution groupBit is -2, I've read every bit in current byte and I should read more 2 bit.
+		else if (bitPosition == -2)
 		{
 			if (++iterator == sizeOfVector)
 			{
 				return str;
 			}
 			element = compressed.at(iterator);
-			groupBitPosition = char(groupBitPosition + initialBitPosition);
-			result = GetBinaryValue(element, char(groupBitMask << groupBitPosition));
+			bitPosition = char(bitPosition + initialBitPosition);
+			groupBit = GetBinaryValue(element, char(groupBitMask << bitPosition));
 		}
 		else
 		{
-			result = GetBinaryValue(element, char(groupBitMask << groupBitPosition));
+			groupBit = GetBinaryValue(element, char(groupBitMask << bitPosition));
 		}
 
-		mask = char(std::pow(2, result + 1) - 1);
+		// Since indexBitMask always has 2^(groupBit+1) - 1, I make it formula
+		indexBitMask = char(std::pow(2, groupBit + 1) - 1);
 
-		const char numOfMask = char(numBits(mask));
-		groupBitPosition = char(groupBitPosition - numOfMask);
+		const char numOfIndexMask = char(numBits(indexBitMask));
+		bitPosition = char(bitPosition - numOfIndexMask);
 
-		char index = 0;
-		if (groupBitPosition < 0)
+		char indexBit = 0;
+		// If bit position has no enough space or fulfilled, push back and prepare to next byte
+		if (bitPosition < 0)
 		{
-			index = GetBinaryValue(unsigned char(element << abs(groupBitPosition)), mask);
+			indexBit = GetBinaryValue(char(element << abs(bitPosition)), indexBitMask);
 			if (++iterator == sizeOfVector)
 			{
 				return str;
 			}
 			element = compressed.at(iterator);
-			groupBitPosition = char(groupBitPosition + initialBitPosition);
-			index = char(index | GetBinaryValue(element, mask = char(mask << groupBitPosition)));
+			bitPosition = char(bitPosition + initialBitPosition);
+			indexBit = char(indexBit | GetBinaryValue(element, indexBitMask = char(indexBitMask << bitPosition)));
 		}
+		// Otherwise, continue to store.
 		else
 		{
-			mask = char(mask << groupBitPosition);
-			index = GetBinaryValue(element, mask);
+			indexBitMask = char(indexBitMask << bitPosition);
+			indexBit = GetBinaryValue(element, indexBitMask);
 		}
 		char c = 0;
 		try
 		{
-			c = TryGetHuffmanChar(result, index);
+			c = TryGetHuffmanChar(groupBit, indexBit);
 		}
 		catch (const char* exception)
 		{
-			std::cout << exception;
+			return str;
 		}
 		str += c;
 	}
