@@ -153,6 +153,7 @@ std::string decode(std::vector<char> compressed)
 
 	constexpr char initialBitPosition = 8;
 	constexpr char groupBitMask = 0x03;		// 0b11, group bit is always 2bit
+	const int numOfGroupBit = numBits(groupBitMask);
 	char bitPosition = initialBitPosition;
 	char indexBitMask;
 
@@ -163,8 +164,8 @@ std::string decode(std::vector<char> compressed)
 	while (iterator != sizeOfVector)
 	{
 		char groupBit;
-		// First of all, since group bit is always 2 bit, substituted by 2 at current Group Bit Position
-		bitPosition = char(bitPosition - 2);
+		// First of all, since group bit is always 2 bit, substituted by Num of Group Bit.
+		bitPosition = char(bitPosition - numOfGroupBit);
 		// If substitution groupBit is -1, I've read every bit in current byte and I should read more 1 bit.
 		if (bitPosition == -1)
 		{
