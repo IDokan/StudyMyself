@@ -18,15 +18,7 @@ Creation date: 09/02/2019
 
 namespace
 {
-	const int NUMGROUPS = 4;
-	std::string groups[NUMGROUPS] = {
-		" e",	// 2	/0b1
-		"taoi",	// 4	/0b11
-		"nshrdlcu",	// 8	/ 0b111
-		"mwfgypbvkjxqz"	// 13	/ 0b1111
-	};
-
-	std::string data = { " etaoinshrdlcumwfgypbvkjxqz" };
+	const std::string data = { " etaoinshrdlcumwfgypbvkjxqz" };
 }
 
 // return index matched group bit
@@ -178,7 +170,7 @@ std::string decode(std::vector<char> compressed)
 			element = compressed.at(iterator);
 			bitPosition = char(bitPosition + initialBitPosition);
 			// And Get a First bit in next bit
-			groupBit = char(groupBit | GetBinaryValue(element, char(0x80)));
+			groupBit = char(groupBit | GetBinaryValue(element, char(0x01 << 7)));
 		}
 		// If substitution groupBit is -2, I've read every bit in current byte and I should read more 2 bit.
 		else if (bitPosition == -2)

@@ -152,6 +152,7 @@ template <class T>
 void Vector<T>::PushBack(const T& value)
 {
 	++count;
+	// If count is bigger than capacity, increase capacity.
 	if (count > capacity)
 	{
 		capacity *= 2;
@@ -173,6 +174,7 @@ void Vector<T>::Remove(Iterator location)
 	{
 		throw("Remove try to remove at not exist value");
 	}
+	// Remove and fill in removed place
 	for (Iterator it = location + 1; it != End(); ++it)
 	{
 		*(it - 1) = *it;
@@ -190,11 +192,13 @@ void Vector<T>::Insert(Iterator location, const T& value)
 
 	PushBack(value);
 
+	// Pull value already stored in vector
 	for (Iterator it = End() - 1; it != location; --it)
 	{
 		*it = *(it - 1);
 	}
 
+	// Push correct value in correct location
 	*(location + 1) = value;
 }
 

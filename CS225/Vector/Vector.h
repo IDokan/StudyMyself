@@ -44,6 +44,7 @@ public:
 		explicit Iterator(T*, const Vector<T>*);
 
 		T* location;
+		// Member variable to use for error handling
 		const Vector<T>* belongsTo;
 	};
 
