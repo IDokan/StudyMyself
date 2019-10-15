@@ -5,6 +5,7 @@
 #include <getopt.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "cachelab.h"
 
 typedef struct {
@@ -43,29 +44,90 @@ typedef struct
 	set* sets;
 } cache;
 
-void RunCache(const cache& myCache, unsigned long int address, const cacheSetting& myCacheSetting, result& myResult)
+int GetEmptyIndex(const set& mySet, const cacheSetting& myCacheSetting)
 {
-
+	const int lineSize = myCacheSetting.E;
+	for (int lineCount = 0; lineCount < lineSize; ++lineCount)
+	{
+		if (mySet.lines[lineCount].valid == 0)
+		{
+			return lineCount;
+		}
+	}
+	return -1;
 }
 
-set* MakeCache(int numOfSets, numOfLines, numOfBlocks)
+void LoadCache(const cache* myCache, unsigned long int address, const cacheSetting myCacheSetting, cacheResult* myResult)
 {
-	cache newCache;
-	newCache.sets = (set*)malloc(numOfSets*sizeof(set));
-	for (int countSet = 0; countSet < numOfSets; ++countSet)
-	{
-		newCache.sets[countSet].lines = (line*)malloc(numOfLines*sizeof(line));
+	const int selectedBlockOffset = (address & myCacheSetting.BlockOffsetMask);
+	const int selectedSetIndex = (address & myCacheSetting.SetIndexMask) >> (myCacheSetting.b);
+	const int selectedTagBits = (address & myCacheSetting.TagBitsMask) >> (myCacheSetting.b + myCacheSetting.s);
 
-		for (int countLine = 0; countLine < numOfLines; ++countLine)
+	set selectedSet = myCache->sets[selectedSetIndex];
+	for (int lineCount = 0; lineCount < myCacheSetting.E; ++lineCount)
+	{
+		if (selectedSet.lines[lineCount].valid == true)
 		{
-			newCache.sets[countSet].lines[countLine].valid = false;
-			newCache.sets[countSet].lines[countLine].accessCount = 0;
-			newCache.sets[countSet].lines[countLine].tag = 0;
-			newCache.sets[countSet].lines[countLine].block = (bool*)malloc(numOfBlocks);
+			if (selectedSet.lines[lineCount].tag == selectedTagBits)
+			{
+				// If hit, should be stop here
+				++selectedSet.lines[lineCount].accessCount;
+				++myResult->hits;
+				return;
+			}
 		}
 	}
 
-	return newCache.sets;
+	// If missed,
+	int EmptyIndex = GetEmptyIndex(selectedSet, myCacheSetting);
+	if (EmptyIndex == -1)
+	{
+		// Evict one of line
+	}
+	else
+	{
+		selectedSet.lines[EmptyIndex].valid = true;
+		++selectedSet.lines[EmptyIndex].accessCount;
+		selectedSet.lines[EmptyIndex].tag = selectedTagBits;
+	}
+	return;
+}
+
+void StoreCache(const cache& myCache, unsigned long int address, const cacheSetting& myCacheSetting, result& myResult)
+{
+}
+
+set* MakeCache(int numOfSets, int numOfLines, int numOfBlocks)
+{
+	set* newCache;
+	newCache = (set*)malloc(numOfSets*sizeof(set));
+	for (int countSet = 0; countSet < numOfSets; ++countSet)
+	{
+		newCache[countSet].lines = (line*)malloc(numOfLines*sizeof(line));
+
+		for (int countLine = 0; countLine < numOfLines; ++countLine)
+		{
+			newCache[countSet].lines[countLine].valid = false;
+			newCache[countSet].lines[countLine].accessCount = 0;
+			newCache[countSet].lines[countLine].tag = 0;
+			newCache[countSet].lines[countLine].block = (bool*)malloc(numOfBlocks);
+		}
+	}
+
+	return newCache;
+}
+
+void ClearCache(set* deletedCache, int numOfSets, int numOfLines, int numOfBlocks)
+{
+	for (int countSet = 0; countSet < numOfSets; ++countSet)
+	{
+		for (int countLine = 0; countLine < numOfLines; ++countLine)
+		{
+			free(deletedCache[countSet].lines[countLine].block);
+		}
+		free(deletedCache[countSet].lines);
+	}
+	free(deletedCache);
 }
 
 inline int PowerOf2(int i)
@@ -103,12 +165,14 @@ int main(int argc, char* argv[])
 		}
 	}
 	// Caculate Mask bits
-	myCacheSetting.SetIndexMask = (1<<myCacheSetting.s) - 1;
-	myCacheSetting.TagBitsMask = ((1<<(64 - (myCacheSetting.s + myCacheSetting.b))) - 1) ^ myCacheSetting.SetIndexMask;
-	myCacheSetting.BlockOffsetMask = (-1) ^ (myCacheSetting.SetIndexMask + myCacheSetting.TagBitsMask);
+	myCacheSetting.BlockOffsetMask = (1 << myCacheSetting.b) - 1;
+	myCacheSetting.SetIndexMask = (1<<(myCacheSetting.s+myCacheSetting.SetIndexMask)) - 1;
+	myCacheSetting.TagBitsMask = (-1) ^ (myCacheSetting.SetIndexMask + myCacheSetting.BlockOffsetMask);
 
 	cache myCache;
-	myCache.sets = MakeCache(PowerOf2(myCacheSetting.s), myCacheSetting.E, PowerOf2(myCacheSetting.b));
+	int numOfSets = PowerOf2(myCacheSetting.s);
+	int numOfBlocks = PowerOf2(myCacheSetting.b);
+	myCache.sets = MakeCache(numOfSets, myCacheSetting.E, numOfBlocks);
 
 
 	cacheResult result;
@@ -141,8 +205,8 @@ int main(int argc, char* argv[])
 		}
 	}
 	// Print s, E, b to DEBUG whether it is working or not.
-    printSummary(cache.s, cache.E, cache.b);
+    printSummary(result.hits, result.misses, result.evictions);
     fclose(traceFile);
-    ClearCache(myCache.sets);
+    ClearCache(myCache.sets, numOfSets, myCacheSetting.E, numOfBlocks);
     return 0;
 }
