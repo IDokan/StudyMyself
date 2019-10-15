@@ -11,7 +11,19 @@ typedef struct {
 	int s;
 	int E;
 	int b;
+
+	int SetIndexMask;
+	int TagBitsMask;
+	int BlockOffsetMask;
 } cacheSetting;
+
+
+typedef struct
+{
+	int hits;
+	int misses;
+	int evictions;
+} cacheResult;
 
 typedef struct 
 {
@@ -31,7 +43,12 @@ typedef struct
 	set* sets;
 } cache;
 
-cache MakeCache(int numOfSets, numOfLines, numOfBlocks)
+void RunCache(const cache& myCache, unsigned long int address, const cacheSetting& myCacheSetting, result& myResult)
+{
+
+}
+
+set* MakeCache(int numOfSets, numOfLines, numOfBlocks)
 {
 	cache newCache;
 	newCache.sets = (set*)malloc(numOfSets*sizeof(set));
@@ -48,7 +65,7 @@ cache MakeCache(int numOfSets, numOfLines, numOfBlocks)
 		}
 	}
 
-	return newCache;
+	return newCache.sets;
 }
 
 inline int PowerOf2(int i)
@@ -58,21 +75,22 @@ inline int PowerOf2(int i)
 
 int main(int argc, char* argv[])
 {
-	cacheSetting cacheOption;
+	cacheSetting myCacheSetting;
 	char* traceFileName = 0;
 	char option;
+	// Get Option and Set
 	while((option = getopt(argc, argv, "s:E:b:t:hv")) != -1)
 	{
 		switch(option)
 		{
 			case 's':
-				cache.s = atoi(optarg);
+				myCacheSetting.s = atoi(optarg);
 			break;
 			case 'E':
-				cache.E = atoi(optarg);
+				myCacheSetting.E = atoi(optarg);
 			break;
 			case 'b':
-				cache.b = atoi(optarg);
+				myCacheSetting.b = atoi(optarg);
 			break;
 			case 't':
 				traceFileName = optarg;
@@ -84,16 +102,47 @@ int main(int argc, char* argv[])
 			break;
 		}
 	}
+	// Caculate Mask bits
+	myCacheSetting.SetIndexMask = (1<<myCacheSetting.s) - 1;
+	myCacheSetting.TagBitsMask = ((1<<(64 - (myCacheSetting.s + myCacheSetting.b))) - 1) ^ myCacheSetting.SetIndexMask;
+	myCacheSetting.BlockOffsetMask = (-1) ^ (myCacheSetting.SetIndexMask + myCacheSetting.TagBitsMask);
 
 	cache myCache;
-	myCache.sets = MakeCache(PowerOf2(cacheOption.s), cacheOption.E, PowerOf2(cacheOption.b));
+	myCache.sets = MakeCache(PowerOf2(myCacheSetting.s), myCacheSetting.E, PowerOf2(myCacheSetting.b));
 
+
+	cacheResult result;
+	result.hits = 0;
+	result.misses = 0;
+	result.evictions = 0;
+
+	char instructor;
+	int address;
+	int size;
+	// Open Trace file and run
 	FILE* traceFile = fopen(traceFileName, "r");
 	if (traceFile != NULL)
 	{
+		while(fscanf(traceFile, " %c %x, %i", &instructor, &address, &size))
+		{
+			switch(instructor)
+			{
+				// Modify
+				case 'M':
 
+				break;
+				// Load
+				case 'L':
+				break;
+				// Store
+				case 'S':
+				break;
+			}
+		}
 	}
 	// Print s, E, b to DEBUG whether it is working or not.
     printSummary(cache.s, cache.E, cache.b);
+    fclose(traceFile);
+    ClearCache(myCache.sets);
     return 0;
 }
