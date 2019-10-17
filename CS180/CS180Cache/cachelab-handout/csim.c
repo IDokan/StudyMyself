@@ -13,6 +13,10 @@ typedef struct {
 	int E;
 	int b;
 
+	// Number of sets and blocks
+	int S;
+	int B;
+
 	int SetIndexMask;
 	int TagBitsMask;
 	int BlockOffsetMask;
@@ -29,7 +33,7 @@ typedef struct
 typedef struct 
 {
 	bool valid;
-	int accessCount;
+	int timeCount;
 	int tag;
 	bool* block;
 } line;
@@ -57,11 +61,38 @@ int GetEmptyIndex(const set& mySet, const cacheSetting& myCacheSetting)
 	return -1;
 }
 
+int GetLRU(const cache* myCache, const cacheSetting myCacheSetting)
+{
+	int leastRecentlyUsed = 99;
+	int lineIndex = -1;
+	for (int setCount = 0; setCount < myCacheSetting.S; ++setCount)
+	{
+		for (int lineCount = 0; lineCount < myCacheSetting.E; ++lineCount)
+		{
+			if (myCache.sets[setCount].lines[lineCount].timeCount < leastRecentlyUsed)
+			{
+				leastRecentlyUsed = myCache.sets[setCount].lines[lineCount].timeCount;
+				lineIndex = lineCount;
+			}
+		}
+	}
+	return lineIndex;
+}
+
 void LoadCache(const cache* myCache, unsigned long int address, const cacheSetting myCacheSetting, cacheResult* myResult)
 {
 	const int selectedBlockOffset = (address & myCacheSetting.BlockOffsetMask);
 	const int selectedSetIndex = (address & myCacheSetting.SetIndexMask) >> (myCacheSetting.b);
 	const int selectedTagBits = (address & myCacheSetting.TagBitsMask) >> (myCacheSetting.b + myCacheSetting.s);
+
+// !
+	for (int setCount = 0; setCount < myCacheSetting.S; ++setCount)
+	{
+		for (int lineCount = 0; lineCount < myCacheSetting.E; ++lineCount)
+		{
+			++myCache->sets[setCount].lines[lineCount].timeCount;
+		}
+	}
 
 	set selectedSet = myCache->sets[selectedSetIndex];
 	for (int lineCount = 0; lineCount < myCacheSetting.E; ++lineCount)
@@ -71,7 +102,7 @@ void LoadCache(const cache* myCache, unsigned long int address, const cacheSetti
 			if (selectedSet.lines[lineCount].tag == selectedTagBits)
 			{
 				// If hit, should be stop here
-				++selectedSet.lines[lineCount].accessCount;
+				++selectedSet.lines[lineCount].timeCount;
 				++myResult->hits;
 				return;
 			}
@@ -82,13 +113,14 @@ void LoadCache(const cache* myCache, unsigned long int address, const cacheSetti
 	int EmptyIndex = GetEmptyIndex(selectedSet, myCacheSetting);
 	if (EmptyIndex == -1)
 	{
-		// Evict one of line
+		GetLRU(myCache);
 	}
 	else
 	{
 		selectedSet.lines[EmptyIndex].valid = true;
-		++selectedSet.lines[EmptyIndex].accessCount;
+		++selectedSet.lines[EmptyIndex].timeCount;
 		selectedSet.lines[EmptyIndex].tag = selectedTagBits;
+		++myResult->misses;
 	}
 	return;
 }
@@ -108,7 +140,7 @@ set* MakeCache(int numOfSets, int numOfLines, int numOfBlocks)
 		for (int countLine = 0; countLine < numOfLines; ++countLine)
 		{
 			newCache[countSet].lines[countLine].valid = false;
-			newCache[countSet].lines[countLine].accessCount = 0;
+			newCache[countSet].lines[countLine].timeCount = 0;
 			newCache[countSet].lines[countLine].tag = 0;
 			newCache[countSet].lines[countLine].block = (bool*)malloc(numOfBlocks);
 		}
@@ -170,9 +202,9 @@ int main(int argc, char* argv[])
 	myCacheSetting.TagBitsMask = (-1) ^ (myCacheSetting.SetIndexMask + myCacheSetting.BlockOffsetMask);
 
 	cache myCache;
-	int numOfSets = PowerOf2(myCacheSetting.s);
-	int numOfBlocks = PowerOf2(myCacheSetting.b);
-	myCache.sets = MakeCache(numOfSets, myCacheSetting.E, numOfBlocks);
+	myCacheSetting.S = PowerOf2(myCacheSetting.s);
+	myCacheSetting.B = PowerOf2(myCacheSetting.b);
+	myCache.sets = MakeCache(myCacheSetting.S, myCacheSetting.E, myCacheSetting.B);
 
 
 	cacheResult result;
@@ -207,6 +239,6 @@ int main(int argc, char* argv[])
 	// Print s, E, b to DEBUG whether it is working or not.
     printSummary(result.hits, result.misses, result.evictions);
     fclose(traceFile);
-    ClearCache(myCache.sets, numOfSets, myCacheSetting.E, numOfBlocks);
+    ClearCache(myCache.sets, myCacheSetting.S, myCacheSetting.E, myCacheSetting.B);
     return 0;
 }

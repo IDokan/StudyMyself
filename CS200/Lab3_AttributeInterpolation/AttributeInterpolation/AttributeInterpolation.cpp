@@ -1,4 +1,11 @@
-﻿#include <CS200/Image.hpp>
+﻿/*
+1. sinil.gang
+2. CS200 Lab 3 - Attribute Interpolation
+3. CS200
+4. Fall 2019
+*/
+
+#include <CS200/Image.hpp>
 #include <cstdlib>
 
 using namespace CS200;
@@ -105,7 +112,8 @@ bool AreTheyAllInside(int* decisions)
 		(decisions[2] >= 0);
 }
 
-void InitialArray(int* arr, int* arr2, const int size)
+template<typename T>
+void InitialArray(T* arr, T* arr2, const int size)
 {
 	for (int i = 0; i < size; ++i)
 	{
@@ -156,9 +164,34 @@ Vector3D CalculateColorVector(const Vertex2D v1, const Vertex2D& v2, ColorType c
 		return Vector3D{ v2.x - v1.x, v2.y - v1.y, v2.color.Blue - v1.color.Blue };
 		break;
 	case ColorType::NUMOFCOLORS: break;
+	default:;
+	}
+	return Vector3D{};
+}
+
+double GetColorStartingDecision(const Vector3D& normalVector, const Point3D& startingPoint, const Vertex2D& anyPoint, ColorType color)
+{
+	switch (color) {
+		case ColorType::RED: return -(normalVector.x * startingPoint.x + normalVector.y * startingPoint.y - (normalVector.x * anyPoint.x + normalVector.y * anyPoint.y + normalVector.z * anyPoint.color.Red)) / normalVector.z;
+	case ColorType::GREEN: return -(normalVector.x * startingPoint.x + normalVector.y * startingPoint.y - (normalVector.x * anyPoint.x + normalVector.y * anyPoint.y + normalVector.z * anyPoint.color.Green)) / normalVector.z;
+	case ColorType::BLUE: return -(normalVector.x * startingPoint.x + normalVector.y * startingPoint.y - (normalVector.x * anyPoint.x + normalVector.y * anyPoint.y + normalVector.z * anyPoint.color.Blue)) / normalVector.z;
+	case ColorType::NUMOFCOLORS: break;
 	default: ;
 	}
-	
+	return -1.0;
+}
+
+int clamp(double x)
+{
+	if (x >= 255)
+	{
+		return 255;
+	}
+	else if (x <= 0)
+	{
+		return 0;
+	}
+	return static_cast<int>(x);
 }
 
 void DrawTriangle(const Vertex2D & v1, const Vertex2D & v2, const Vertex2D & v3)
@@ -176,13 +209,6 @@ void DrawTriangle(const Vertex2D & v1, const Vertex2D & v2, const Vertex2D & v3)
 	const Vector3D nLine2{ line2.y, -line2.x };
 	const Vector3D nLine3{ line3.y, -line3.x };
 
-	const Vector3D redVector1 = CalculateColorVector(v2, v1, ColorType::RED);
-	const Vector3D redVector2 = CalculateColorVector(v3, v1, ColorType::RED);
-	const Vector3D greenVector1 = CalculateColorVector(v2, v1, ColorType::GREEN);
-	const Vector3D greenVector2 = CalculateColorVector(v3, v1, ColorType::GREEN);
-	const Vector3D blueVector1 = CalculateColorVector(v2, v1, ColorType::BLUE);
-	const Vector3D blueVector2 = CalculateColorVector(v3, v1, ColorType::BLUE);
-
 	const int size = 3;
 	int startingDecision[size]
 	{
@@ -190,29 +216,75 @@ void DrawTriangle(const Vertex2D & v1, const Vertex2D & v2, const Vertex2D & v3)
 		smallPoint3D * nLine2 - v2 * nLine2,
 		smallPoint3D * nLine3 - v1 * nLine3
 	};
-	int tempDecision[size]{ startingDecision[0], startingDecision[1], startingDecision[2] };
 
-	for (int row = smallPoint3D.y; row < largePoint3D.y; ++row)
+
+	// Initialize color vectors
+	const Vector3D redVector1 = CalculateColorVector(v2, v1, ColorType::RED);
+	const Vector3D redVector2 = CalculateColorVector(v3, v1, ColorType::RED);
+	const Vector3D greenVector1 = CalculateColorVector(v2, v1, ColorType::GREEN);
+	const Vector3D greenVector2 = CalculateColorVector(v3, v1, ColorType::GREEN);
+	const Vector3D blueVector1 = CalculateColorVector(v2, v1, ColorType::BLUE);
+	const Vector3D blueVector2 = CalculateColorVector(v3, v1, ColorType::BLUE);
+
+	const Vector3D redNormalVector = Vector3D::cross(redVector1, redVector2);
+	const Vector3D greenNormalVector = Vector3D::cross(greenVector1, greenVector2);
+	const Vector3D blueNormalVector = Vector3D::cross(blueVector1, blueVector2);
+
+	double startingColorDecision[size]
+	{
+		GetColorStartingDecision(redNormalVector, smallPoint3D, v1, ColorType::RED),
+		GetColorStartingDecision(greenNormalVector, smallPoint3D, v1, ColorType::GREEN),
+		GetColorStartingDecision(blueNormalVector, smallPoint3D, v1, ColorType::BLUE),
+	};
+
+	double colorXOffsets[size]
+	{
+		static_cast<double>(-redNormalVector.x) / redNormalVector.z,
+		static_cast<double>(-greenNormalVector.x) / greenNormalVector.z,
+		static_cast<double>(-blueNormalVector.x) / blueNormalVector.z,
+	};
+
+	double colorYOffsets[size]
+	{
+		static_cast<double>(-redNormalVector.y) / redNormalVector.z,
+		static_cast<double>(-greenNormalVector.y) / greenNormalVector.z,
+		static_cast<double>(-blueNormalVector.y) / blueNormalVector.z,
+	};
+
+	int tempDecision[size]{ startingDecision[0], startingDecision[1], startingDecision[2] };
+	double tempColorDecision[size]{ startingColorDecision[0], startingColorDecision[1], startingColorDecision[2] };
+	for (int row = smallPoint3D.y; row <= largePoint3D.y; ++row)
 	{
 		// Initialize tempDecision as initial value of starting decision.
-		InitialArray(tempDecision, startingDecision, size);
+		InitialArray<int>(tempDecision, startingDecision, size);
+		InitialArray<double>(tempColorDecision, startingColorDecision, size);
 
-		for (int column = smallPoint3D.x; column < largePoint3D.x; ++column)
+		for (int column = smallPoint3D.x; column <= largePoint3D.x; ++column)
 		{
 			if (AreTheyAllInside(tempDecision))
 			{
-				
-				SETPIXEL(column, row, BLACK);
+				SETPIXEL(column, row, Color(
+					static_cast<unsigned char>(clamp(tempColorDecision[0])),
+					static_cast<unsigned char>(clamp(tempColorDecision[1])),
+					static_cast<unsigned char>(clamp(tempColorDecision[2]))));
 			}
 			// Add X value
 			tempDecision[0] += (nLine1.x);
 			tempDecision[1] += (nLine2.x);
 			tempDecision[2] += (nLine3.x);
+			// Add X color offset
+			tempColorDecision[0] += colorXOffsets[0];
+			tempColorDecision[1] += colorXOffsets[1];
+			tempColorDecision[2] += colorXOffsets[2];
 		}
 		// Add Y value
 		startingDecision[0] += (nLine1.y);
 		startingDecision[1] += (nLine2.y);
 		startingDecision[2] += (nLine3.y);
+		// Add Y color offset
+		startingColorDecision[0] += colorYOffsets[0];
+		startingColorDecision[1] += colorYOffsets[1];
+		startingColorDecision[2] += colorYOffsets[2];
 	}
 }
 
