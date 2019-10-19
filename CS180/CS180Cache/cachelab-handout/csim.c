@@ -48,12 +48,12 @@ typedef struct
 	set* sets;
 } cache;
 
-int GetEmptyIndex(const set& mySet, const cacheSetting& myCacheSetting)
+int GetEmptyIndex(const set* mySet, const cacheSetting* myCacheSetting)
 {
-	const int lineSize = myCacheSetting.E;
+	const int lineSize = myCacheSetting->E;
 	for (int lineCount = 0; lineCount < lineSize; ++lineCount)
 	{
-		if (mySet.lines[lineCount].valid == 0)
+		if (mySet->lines[lineCount].valid == 0)
 		{
 			return lineCount;
 		}
@@ -69,9 +69,9 @@ int GetLRU(const cache* myCache, const cacheSetting myCacheSetting)
 	{
 		for (int lineCount = 0; lineCount < myCacheSetting.E; ++lineCount)
 		{
-			if (myCache.sets[setCount].lines[lineCount].timeCount < leastRecentlyUsed)
+			if (myCache->sets[setCount].lines[lineCount].timeCount < leastRecentlyUsed)
 			{
-				leastRecentlyUsed = myCache.sets[setCount].lines[lineCount].timeCount;
+				leastRecentlyUsed = myCache->sets[setCount].lines[lineCount].timeCount;
 				lineIndex = lineCount;
 			}
 		}
@@ -81,7 +81,7 @@ int GetLRU(const cache* myCache, const cacheSetting myCacheSetting)
 
 void LoadCache(const cache* myCache, unsigned long int address, const cacheSetting myCacheSetting, cacheResult* myResult)
 {
-	const int selectedBlockOffset = (address & myCacheSetting.BlockOffsetMask);
+	/*const int selectedBlockOffset = (address & myCacheSetting.BlockOffsetMask);*/
 	const int selectedSetIndex = (address & myCacheSetting.SetIndexMask) >> (myCacheSetting.b);
 	const int selectedTagBits = (address & myCacheSetting.TagBitsMask) >> (myCacheSetting.b + myCacheSetting.s);
 
@@ -110,10 +110,15 @@ void LoadCache(const cache* myCache, unsigned long int address, const cacheSetti
 	}
 
 	// If missed,
-	int EmptyIndex = GetEmptyIndex(selectedSet, myCacheSetting);
+	int EmptyIndex = GetEmptyIndex(&selectedSet, &myCacheSetting);
 	if (EmptyIndex == -1)
 	{
-		GetLRU(myCache);
+		int evictedLineIndex = GetLRU(myCache, myCacheSetting);
+
+		++myResult->evictions;
+		selectedSet.lines[evictedLineIndex].valid = true;
+		selectedSet.lines[evictedLineIndex].timeCount = 1;
+		selectedSet.lines[evictedLineIndex].tag = selectedTagBits;
 	}
 	else
 	{
@@ -124,10 +129,10 @@ void LoadCache(const cache* myCache, unsigned long int address, const cacheSetti
 	}
 	return;
 }
-
-void StoreCache(const cache& myCache, unsigned long int address, const cacheSetting& myCacheSetting, result& myResult)
+/*
+void StoreCache(const cache* myCache, unsigned long int address, const cacheSetting* myCacheSetting, result* myResult)
 {
-}
+}*/
 
 set* MakeCache(int numOfSets, int numOfLines, int numOfBlocks)
 {
@@ -162,7 +167,7 @@ void ClearCache(set* deletedCache, int numOfSets, int numOfLines, int numOfBlock
 	free(deletedCache);
 }
 
-inline int PowerOf2(int i)
+int PowerOf2(int i)
 {
 	return 1 << i;
 }
@@ -198,7 +203,7 @@ int main(int argc, char* argv[])
 	}
 	// Caculate Mask bits
 	myCacheSetting.BlockOffsetMask = (1 << myCacheSetting.b) - 1;
-	myCacheSetting.SetIndexMask = (1<<(myCacheSetting.s+myCacheSetting.SetIndexMask)) - 1;
+	myCacheSetting.SetIndexMask = ((1<<(myCacheSetting.s+myCacheSetting.b)) - 1) ^ myCacheSetting.BlockOffsetMask;
 	myCacheSetting.TagBitsMask = (-1) ^ (myCacheSetting.SetIndexMask + myCacheSetting.BlockOffsetMask);
 
 	cache myCache;
