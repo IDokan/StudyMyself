@@ -48,6 +48,8 @@ typedef struct
 	set* sets;
 } cache;
 
+bool vervoseFlag = false;
+
 int GetEmptyIndex(const set* mySet, const cacheSetting* myCacheSetting)
 {
 	const int lineSize = myCacheSetting->E;
@@ -101,6 +103,10 @@ void LoadCache(const cache* myCache, unsigned long int address, const cacheSetti
 		{
 			if (selectedSet.lines[lineCount].tag == selectedTagBits)
 			{
+				if (vervoseFlag == true)
+				{
+					printf(" hit");
+				}
 				// If hit, should be stop here
 				++selectedSet.lines[lineCount].timeCount;
 				++myResult->hits;
@@ -115,6 +121,11 @@ void LoadCache(const cache* myCache, unsigned long int address, const cacheSetti
 	{
 		int evictedLineIndex = GetLRU(myCache, myCacheSetting);
 
+				if (vervoseFlag == true)
+				{
+					printf(" miss eviction");
+				}
+				++myResult->misses;
 		++myResult->evictions;
 		selectedSet.lines[evictedLineIndex].valid = true;
 		selectedSet.lines[evictedLineIndex].timeCount = 1;
@@ -122,6 +133,10 @@ void LoadCache(const cache* myCache, unsigned long int address, const cacheSetti
 	}
 	else
 	{
+				if (vervoseFlag == true)
+				{
+					printf(" miss");
+				}
 		selectedSet.lines[EmptyIndex].valid = true;
 		++selectedSet.lines[EmptyIndex].timeCount;
 		selectedSet.lines[EmptyIndex].tag = selectedTagBits;
@@ -198,6 +213,7 @@ int main(int argc, char* argv[])
 			case 'h':
 			break;
 			case 'v':
+			vervoseFlag = true;
 			break;
 		}
 	}
@@ -224,21 +240,32 @@ int main(int argc, char* argv[])
 	FILE* traceFile = fopen(traceFileName, "r");
 	if (traceFile != NULL)
 	{
-		while(fscanf(traceFile, " %c %x, %i", &instructor, &address, &size))
+		while(fscanf(traceFile, " %c %x, %i", &instructor, &address, &size) > 0)
 		{
+			if (vervoseFlag == true)
+			{
+				printf(" %c %x, %i", instructor, address, size);
+			}
 			switch(instructor)
 			{
 				// Modify
 				case 'M':
-
+					LoadCache(&myCache, address, myCacheSetting, &result);
+					LoadCache(&myCache, address, myCacheSetting, &result);
 				break;
 				// Load
 				case 'L':
+					LoadCache(&myCache, address, myCacheSetting, &result);
 				break;
 				// Store
 				case 'S':
+					LoadCache(&myCache, address, myCacheSetting, &result);
 				break;
 			}
+				if (vervoseFlag == true)
+				{
+					printf("\n");
+				}
 		}
 	}
 	// Print s, E, b to DEBUG whether it is working or not.
