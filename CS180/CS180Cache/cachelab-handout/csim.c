@@ -65,13 +65,13 @@ int GetEmptyIndex(const set* mySet, const cacheSetting* myCacheSetting)
 
 int GetLRU(const cache* myCache, const cacheSetting myCacheSetting)
 {
-	int leastRecentlyUsed = 99;
+	int leastRecentlyUsed = 0;
 	int lineIndex = -1;
 	for (int setCount = 0; setCount < myCacheSetting.S; ++setCount)
 	{
 		for (int lineCount = 0; lineCount < myCacheSetting.E; ++lineCount)
 		{
-			if (myCache->sets[setCount].lines[lineCount].timeCount < leastRecentlyUsed)
+			if (myCache->sets[setCount].lines[lineCount].timeCount > leastRecentlyUsed)
 			{
 				leastRecentlyUsed = myCache->sets[setCount].lines[lineCount].timeCount;
 				lineIndex = lineCount;
@@ -234,17 +234,21 @@ int main(int argc, char* argv[])
 	result.evictions = 0;
 
 	char instructor;
-	int address;
+	unsigned long int address;
 	int size;
 	// Open Trace file and run
 	FILE* traceFile = fopen(traceFileName, "r");
 	if (traceFile != NULL)
 	{
-		while(fscanf(traceFile, " %c %x, %i", &instructor, &address, &size) > 0)
+		while(fscanf(traceFile, " %c %lx, %i", &instructor, &address, &size) > 0)
 		{
+			if (instructor == 'I')
+			{
+				continue;
+			}
 			if (vervoseFlag == true)
 			{
-				printf(" %c %x, %i", instructor, address, size);
+				printf("%c %lx,%i", instructor, address, size);
 			}
 			switch(instructor)
 			{
