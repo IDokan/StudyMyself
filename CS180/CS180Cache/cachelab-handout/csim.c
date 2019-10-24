@@ -63,21 +63,33 @@ int GetEmptyIndex(const set* mySet, const cacheSetting* myCacheSetting)
 	return -1;
 }
 
-int GetLRU(const cache* myCache, const cacheSetting myCacheSetting)
+int GetLRU(const set* mySet, const cacheSetting myCacheSetting)
 {
-	int leastRecentlyUsed = 0;
-	int lineIndex = -1;
-	for (int setCount = 0; setCount < myCacheSetting.S; ++setCount)
-	{
-		for (int lineCount = 0; lineCount < myCacheSetting.E; ++lineCount)
+	int leastRecentlyUsed = mySet->lines[0].timeCount;
+	int lineIndex = 0;
+		for (int lineCount = 1; lineCount < myCacheSetting.E; ++lineCount)
 		{
-			if (myCache->sets[setCount].lines[lineCount].timeCount > leastRecentlyUsed)
+			if (mySet->lines[lineCount].timeCount < leastRecentlyUsed)
 			{
-				leastRecentlyUsed = myCache->sets[setCount].lines[lineCount].timeCount;
+				leastRecentlyUsed = mySet->lines[lineCount].timeCount;
 				lineIndex = lineCount;
 			}
 		}
-	}
+	return lineIndex;
+}
+
+int FindOldest(const set* mySet, const cacheSetting myCacheSetting)
+{
+	int howOld = mySet->lines[0].timeCount;
+	int lineIndex = 0;
+		for (int lineCount = 1; lineCount < myCacheSetting.E; ++lineCount)
+		{
+			if (mySet->lines[lineCount].timeCount > howOld)
+			{
+				howOld = mySet->lines[lineCount].timeCount;
+				lineIndex = lineCount;
+			}
+		}
 	return lineIndex;
 }
 
@@ -86,15 +98,6 @@ void LoadCache(const cache* myCache, unsigned long int address, const cacheSetti
 	/*const int selectedBlockOffset = (address & myCacheSetting.BlockOffsetMask);*/
 	const int selectedSetIndex = (address & myCacheSetting.SetIndexMask) >> (myCacheSetting.b);
 	const int selectedTagBits = (address & myCacheSetting.TagBitsMask) >> (myCacheSetting.b + myCacheSetting.s);
-
-// !
-	for (int setCount = 0; setCount < myCacheSetting.S; ++setCount)
-	{
-		for (int lineCount = 0; lineCount < myCacheSetting.E; ++lineCount)
-		{
-			++myCache->sets[setCount].lines[lineCount].timeCount;
-		}
-	}
 
 	set selectedSet = myCache->sets[selectedSetIndex];
 	for (int lineCount = 0; lineCount < myCacheSetting.E; ++lineCount)
@@ -108,7 +111,8 @@ void LoadCache(const cache* myCache, unsigned long int address, const cacheSetti
 					printf(" hit");
 				}
 				// If hit, should be stop here
-				++selectedSet.lines[lineCount].timeCount;
+				int oldestIndex = FindOldest(&selectedSet, myCacheSetting);
+				selectedSet.lines[lineCount].timeCount = selectedSet.lines[oldestIndex].timeCount+1;
 				++myResult->hits;
 				return;
 			}
@@ -119,7 +123,7 @@ void LoadCache(const cache* myCache, unsigned long int address, const cacheSetti
 	int EmptyIndex = GetEmptyIndex(&selectedSet, &myCacheSetting);
 	if (EmptyIndex == -1)
 	{
-		int evictedLineIndex = GetLRU(myCache, myCacheSetting);
+		int evictedLineIndex = GetLRU(&selectedSet, myCacheSetting);
 
 				if (vervoseFlag == true)
 				{
@@ -128,7 +132,8 @@ void LoadCache(const cache* myCache, unsigned long int address, const cacheSetti
 				++myResult->misses;
 		++myResult->evictions;
 		selectedSet.lines[evictedLineIndex].valid = true;
-		selectedSet.lines[evictedLineIndex].timeCount = 1;
+				int oldestIndex = FindOldest(&selectedSet, myCacheSetting);
+				selectedSet.lines[evictedLineIndex].timeCount = selectedSet.lines[oldestIndex].timeCount+1;
 		selectedSet.lines[evictedLineIndex].tag = selectedTagBits;
 	}
 	else
@@ -138,7 +143,8 @@ void LoadCache(const cache* myCache, unsigned long int address, const cacheSetti
 					printf(" miss");
 				}
 		selectedSet.lines[EmptyIndex].valid = true;
-		++selectedSet.lines[EmptyIndex].timeCount;
+				int oldestIndex = FindOldest(&selectedSet, myCacheSetting);
+				selectedSet.lines[EmptyIndex].timeCount = selectedSet.lines[oldestIndex].timeCount+1;
 		selectedSet.lines[EmptyIndex].tag = selectedTagBits;
 		++myResult->misses;
 	}
