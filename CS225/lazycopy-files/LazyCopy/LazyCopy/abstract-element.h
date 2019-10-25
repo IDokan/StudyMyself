@@ -1,20 +1,25 @@
 #pragma once
+#include "CRTP.h"
 
 namespace CS225
 {
-	class AbstractElement
+	class AbstractElement abstract : ObjectCounter<int>
 	{
 	public:
-		static int live()
+		static size_t live()
 		{
-			
+			return ObjectCounter<int>::live();
 		}
-
-		static int total()
+		static size_t total()
 		{
-			
+			return ObjectCounter<int>::total();
 		}
+		
+		virtual int Get() const = 0;
+		virtual void Set(int new_val) = 0;
+		virtual void Print() const = 0;
 
+		virtual ~AbstractElement() = default;
 	private:
 		
 	};

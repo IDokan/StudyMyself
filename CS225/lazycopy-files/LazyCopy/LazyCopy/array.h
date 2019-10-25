@@ -15,6 +15,8 @@ namespace CS225 {
 			Array(int * array, unsigned int _size, 
 					const ElementFactory* _pElementFactory
 					);
+			Array(const Array& array);
+			Array& operator=(const Array& array);
 
 			int Get(unsigned int pos) const;
 			void Set(int id, int pos, int value);
@@ -24,6 +26,8 @@ namespace CS225 {
 			AbstractElement** data;
 			unsigned int size;
 			const ElementFactory* pElementFactory;
+
+			int* count;
 	};
 }
 #endif

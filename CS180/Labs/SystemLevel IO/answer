@@ -1,0 +1,56 @@
+Names: sinil.gang sangmin.kin jookyung.lee jeesoo.kim chulseung.lee jaemin.woo
+1. Yes we did (BUFFERSIZE - 1 in conditional statement)
+
+2. printf is buffered function but wirte is not.
+So, write is outputted immediately, but printf wait for flushed, 
+FFlush emit all data in buffer
+
+3. it printfs depend on buffer size.
+Every out function interpreted write at final stage
+
+4. write is faster. Yes!
+
+5. fprintf is much more faster.
+since fprintf is buffer function.
+
+6. Smaller amount of data use write
+Bigger amount of data use fprintf
+
+7. It was, Nothing changed
+
+8. 
+CASE 1) abcde
+CASE 2) aabbccddee
+CASE 3) abcde
+
+9.
+Yes
+case1 just one process
+case2 reffer different process
+case3 share same file
+
+10.
+aabbccddee
+
+11. 
+characters over 5 character
+
+12. 
+write
+
+13. 
+No, it called open and dup2 functions.
+
+14. 
+It appended the 180rocks in the txt file.
+When opening the trncate flag has been set to keep the original contexts.
+
+15. 
+/dev/tty stands for the controlling terminal (if any) for the current process.
+.bash_history	a file list what commands used.
+/etc/inputrc is a start-up file used by readline
+
+When we are sending one file to another file.
+
+16. 
+The order in which the processes were called.
