@@ -17,11 +17,15 @@ namespace CS225 {
 					);
 			Array(const Array& array);
 			Array& operator=(const Array& array);
+			~Array();
 
 			int Get(unsigned int pos) const;
 			void Set(int id, int pos, int value);
 
 			void Print() const;
+	private:
+		void Free();
+		
 		private:
 			AbstractElement** data;
 			unsigned int size;

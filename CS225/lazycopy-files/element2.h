@@ -18,6 +18,7 @@ namespace CS225 {
       virtual void Set(int new_val);
       virtual void Print() const;
       virtual ~Element2();
+  	virtual Element2* Clone() final;
     private:
       int * p_val;
   };

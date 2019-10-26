@@ -29,3 +29,8 @@ void CS225::Element2::Set(int new_val) {
 CS225::Element2::~Element2() {
 	delete p_val;
 }
+
+CS225::Element2* CS225::Element2::Clone()
+{
+	return new Element2(*p_val);
+}
