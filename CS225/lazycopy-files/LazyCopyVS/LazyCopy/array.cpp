@@ -43,7 +43,6 @@ CS225::Array::~Array()
 {
 	if((--* count) <= 0)
 	{
-		delete count;
 		Free();
 	}
 }
@@ -76,8 +75,10 @@ void CS225::Array::Print() const {
 
 void CS225::Array::Free()
 {
+	delete count;
 	for (size_t i = 0; i < size; ++i)
 	{
 		delete data[i];
 	}
+	delete[] data;
 }
