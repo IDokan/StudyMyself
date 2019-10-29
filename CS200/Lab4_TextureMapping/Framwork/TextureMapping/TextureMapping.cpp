@@ -81,7 +81,7 @@ struct Point3D
 	{
 		return Vector3D(x - rhs.x, y - rhs.y, z - rhs.z);
 	}
-	
+
 	int operator*(const Vector3D& v) const
 	{
 		return static_cast<int>(x * v.x + y * v.y);
@@ -94,8 +94,8 @@ struct Point3D
 
 struct TextureCoordinate
 {
-	TextureCoordinate(float u = 0.f, float v = 0.f):u(u), v(v) {}
-	
+	TextureCoordinate(float u = 0.f, float v = 0.f) :u(u), v(v) {}
+
 	float u;
 	float v;
 };
@@ -104,7 +104,7 @@ int ROUND(float f) { return static_cast<int>(floor(f + 0.5f)); }
 
 void SETPIXEL(int column, int row, Color intensity) { gImage.SetPixel(column, row, intensity); }
 
-void DrawTriangle(const Vertex2D& v1, const Vertex2D& v2, const Vertex2D& v3, const RenderOption & option);
+void DrawTriangle(const Vertex2D& v1, const Vertex2D& v2, const Vertex2D& v3, const RenderOption& option);
 
 int main(void)
 {
@@ -230,17 +230,17 @@ enum class AttributeType {
 
 Vector3D CalculateAttributeVector(const Vertex2D v1, const Vertex2D& v2, AttributeType attributeType)
 {
-	Vector3D vector{v2.x - v1.x, v2.y-v1.y, 0};
+	Vector3D vector{ v2.x - v1.x, v2.y - v1.y, 0 };
 	switch (attributeType)
 	{
 	case AttributeType::RED:
-		vector.z =  static_cast<float>(v2.color.Red - v1.color.Red);
+		vector.z = static_cast<float>(v2.color.Red - v1.color.Red);
 		break;
 	case AttributeType::GREEN:
-		vector.z =  static_cast<float>(v2.color.Green - v1.color.Green);
+		vector.z = static_cast<float>(v2.color.Green - v1.color.Green);
 		break;
 	case AttributeType::BLUE:
-		vector.z =  static_cast<float>(v2.color.Blue - v1.color.Blue);
+		vector.z = static_cast<float>(v2.color.Blue - v1.color.Blue);
 		break;
 	case AttributeType::U_TEXTURECOORDINATE:
 		vector.z = v2.u - v1.u;
@@ -282,6 +282,19 @@ float clamp(float x, float max = 255.f, float min = 0.f)
 	return (x);
 }
 
+unsigned char clamp(int x, unsigned char max = 255, unsigned char min = 0)
+{
+	if (x >= max)
+	{
+		return max;
+	}
+	else if (x <= min)
+	{
+		return min;
+	}
+	return static_cast<unsigned char>(x);
+}
+
 float mirror(float num)
 {
 	int intNum = static_cast<int>(num);
@@ -294,43 +307,62 @@ float mirror(float num)
 		return 1.f - (num - floor(num));
 	}
 }
+CS200::Color operator*(const Color& color, const Color& color2)
+{
+	return CS200::Color{
+		static_cast<unsigned char>(color.Red * color2.Red / 255),
+		static_cast<unsigned char>(color.Green * color2.Green / 255),
+		static_cast<unsigned char>(color.Blue * color2.Blue / 255)
+	};
+}
 
 Color GetBlendedColorWithOption(const Color& surfaceColor, TextureCoordinate&& textureCoordinate, const RenderOption& option)
 {
 	switch (option.texture_func) {
-		case TextureFunction::REPEAT:
-		default:
-			textureCoordinate.u -= floor(textureCoordinate.u);
-			textureCoordinate.v -= floor(textureCoordinate.v);
+	case TextureFunction::REPEAT:
+	default:
+		textureCoordinate.u -= floor(textureCoordinate.u);
+		textureCoordinate.v -= floor(textureCoordinate.v);
 		break;
-		case TextureFunction::MIRROR:
-			textureCoordinate.u = mirror(textureCoordinate.u);
-			textureCoordinate.v = mirror(textureCoordinate.v);
+	case TextureFunction::MIRROR:
+		textureCoordinate.u = mirror(textureCoordinate.u);
+		textureCoordinate.v = mirror(textureCoordinate.v);
 		break;
-		case TextureFunction::CLAMP:
-			textureCoordinate.u = static_cast<float> (clamp(textureCoordinate.u, 1.f, 0.f));
-			textureCoordinate.v = static_cast<float> (clamp(textureCoordinate.v, 1.f, 0.f));
+	case TextureFunction::CLAMP:
+		textureCoordinate.u = clamp(textureCoordinate.u, 1.f, 0.f);
+		textureCoordinate.v = clamp(textureCoordinate.v, 1.f, 0.f);
 		break;
 	}
 
-	int x = static_cast<int>(textureCoordinate.u * (option.texture->GetTextureWidth() - 1));
-	int y = static_cast<int>(textureCoordinate.v * (option.texture->GetTextureHeight() - 1));
+	// Texture Coordinate
+	const float Width = static_cast<float>(option.texture->GetTextureWidth());
+	const float Height = static_cast<float>(option.texture->GetTextureHeight());
+	// Real Texel Coordinate
+	const int x = static_cast<int>((textureCoordinate.u * Width - 0.5f));
+	const int y = static_cast<int>((textureCoordinate.v * Height - 0.5f));
 	const Color textureColor = option.texture->GetTextureColor(x, y);
 
 	Color FinalColor{};
 	switch (option.cc_mode) {
-		case ColorCombineMode::DECAL:
-			FinalColor.Red = surfaceColor.Red + textureColor.Alpha * (textureColor.Red - surfaceColor.Red);
-			FinalColor.Green = surfaceColor.Green + textureColor.Alpha * (textureColor.Green - surfaceColor.Green);
-			FinalColor.Blue = surfaceColor.Blue+ textureColor.Alpha * (textureColor.Blue - surfaceColor.Blue);
-			break;
-		case ColorCombineMode::MODULATE:
-			FinalColor = surfaceColor * textureColor;
+	case ColorCombineMode::DECAL:
+		if (textureColor.Alpha <= 0)		// If Alpha <= 0, Assign surface color directly into final color
+		{
+			FinalColor = surfaceColor;
+		}
+		else											// else, calculate it.
+		{
+			FinalColor.Red = ((((255 - textureColor.Alpha)*surfaceColor.Red) + (textureColor.Alpha * (textureColor.Red))) / 255);
+			FinalColor.Green = ((((255 - textureColor.Alpha) * surfaceColor.Green) + (textureColor.Alpha * (textureColor.Green))) / 255);
+			FinalColor.Blue = ((((255 - textureColor.Alpha) * surfaceColor.Blue) + (textureColor.Alpha * (textureColor.Blue))) / 255);
+		}
 		break;
-		case ColorCombineMode::REPLACE:
-			FinalColor = textureColor;
-			break;
-		default: ;
+	case ColorCombineMode::MODULATE:
+		FinalColor = surfaceColor * textureColor;
+		break;
+	case ColorCombineMode::REPLACE:
+		FinalColor = textureColor;
+		break;
+	default:;
 	}
 	return FinalColor;
 }
@@ -429,7 +461,7 @@ void DrawTriangle(const Vertex2D& v1, const Vertex2D& v2, const Vertex2D& v3, co
 	const int smallColumnPointInteger = static_cast<int>(smallPoint3D.x);
 	const int largeRowPointInteger = static_cast<int>(largePoint3D.y);
 	const int largeColumnPointInteger = static_cast<int>(largePoint3D.x);
-	
+
 	for (int row = smallRowPointInteger; row < largeRowPointInteger; ++row)
 	{
 		// Initialize tempDecision as initial value of starting decision.

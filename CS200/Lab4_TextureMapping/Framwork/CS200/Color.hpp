@@ -18,15 +18,6 @@ namespace CS200
         ColorChannel Green = 0;
         ColorChannel Blue = 0;
         ColorChannel Alpha = 255;
-
-    	Color operator*(const Color& color) const
-    	{
-			return Color{
-				static_cast<ColorChannel>(Red*color.Red),
-				static_cast<ColorChannel>(Green*color.Green),
-				static_cast<ColorChannel>(Blue*color.Blue)
-			};
-    	}
     	
     public:
         Color() = default;
