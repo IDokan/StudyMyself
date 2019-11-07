@@ -49,7 +49,7 @@ private:
 		// This converts UndoData to a const char &
 		operator const char& () const
 		{
-			return *(str.c_str());
+			return (str.std::string::operstor[](pos));
 		}
 	};
 
