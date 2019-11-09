@@ -16,6 +16,9 @@ Creation date: 11.09.2019
 
 std::string data = { " etaoinshrdlcumwfgypbvkjxqz" };
 
+int numBits(int value);
+int GetNumGroups();
+
 class BitStream {
 private:
 	struct BitsData;
@@ -32,11 +35,8 @@ public:
 		const size_t sizeOfCompressed = compressed.size();
 		for (size_t compressedCount = 0; compressedCount < sizeOfCompressed; ++compressedCount)
 		{
-			char tmp = compressed.at(compressedCount);
-			for (int bitCount = sizeOfChar - 1; bitCount >= 0; --bitCount)
-			{
-				bits.push_back(tmp & (1 << bitCount));
-			}
+			char c = compressed.at(compressedCount);
+			StoreCharacter(compressed.at(compressedCount));
 		}
 	}
 	BitsData operator[](const size_t index) noexcept
@@ -49,22 +49,34 @@ public:
 		std::vector<char> result;
 
 		const size_t sizeOfBits = bits.size();
-		char resultContainer = 0;
 		for (size_t bitsCount = 0; bitsCount < sizeOfBits; bitsCount += 8)
 		{
-			int index = static_cast<int>(bitsCount);
-			for (int count = sizeOfChar - 1; count >= 0 && index < sizeOfBits; --count)
-			{
-				resultContainer |= bits.at(index++) << count;
-			}
-			result.push_back(resultContainer);
-			resultContainer = 0;
+			result.push_back(LoadCharacter(bitsCount, sizeOfBits));
 		}
 
 		return result;
 	}
 
 private:
+	// Helper functions
+	void StoreCharacter(char character)
+	{
+		for (int bitCount = sizeOfChar - 1; bitCount >= 0; --bitCount)
+		{
+			bits.push_back(character & (1 << bitCount));
+		}
+	}
+	char LoadCharacter(int index, int totalSize) const
+	{
+		char resultContainer = 0;
+		for (int count = sizeOfChar - 1; count >= 0 && index < totalSize; --count)
+		{
+			resultContainer |= bits.at(index++) << count;
+		}
+		return resultContainer;
+	}
+	
+	// Proxy struct
 	struct BitsData
 	{
 		BitStream& stream;
@@ -88,8 +100,9 @@ private:
 
 		bool EndOfData()
 		{
-			// position + 1 indicates next value has a valid group id size or not.
-			return (pos+1) >= stream.bits.size();
+			// If bits has no more than (current position + the number of group bits) elements, left data of bits are invalid data.
+			// The reason why is at least, bits should have 1 + the number of group bits.
+			return (pos+ numBits(GetNumGroups() - 1)) >= stream.bits.size();
 		}
 
 		char operator<<(int i)
