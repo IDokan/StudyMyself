@@ -86,6 +86,7 @@ private:
 		}
 
 
+		// TODO: I stuck in this, solve it.
 		bool EndOfData()
 		{
 			// position + 1 indicates next value has a valid group id size or not.
