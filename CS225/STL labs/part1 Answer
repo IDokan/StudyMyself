@@ -1,9 +1,9 @@
-1. twos = count(v.begin(), v.end(), 2);
-2. odds = count_if(v.begin(), v.end(), [](int i) { return i % 2; });
+1. twos = count(v.begin(), v.end(), target);
+2. odds = count_if(v.begin(), v.end(), [](int i) { return i % 2; });	// data type of argument in lambda can be a auto.
 3. longmonths = count_if(monthlengths.begin(), monthlengths.end(), [](std::pair<const int, int> p) { return (p.second== 31) ? p.first : 0; });
-4. 	allAreOdd = (count_if(v.begin(), v.end(), [](int i) {return i % 2; }) == v.size());
-	noneAreOdd = !count_if(v.begin(), v.end(), [](int i) {return i % 2; });
-	anyAreOdd = count_if(v.begin(), v.end(), [](int i) {return i % 2; });
+4. 	allAreOdd = (count_if(v.begin(), v.end(), [](int i) {return i % 2; }) == v.size());	// Can use all_of() function instead of count_if()
+	noneAreOdd = !count_if(v.begin(), v.end(), [](int i) {return i % 2; });	// Can use none_of() function instead of count_if()
+	anyAreOdd = count_if(v.begin(), v.end(), [](int i) {return i % 2; });	//	Can use any_of() function instead of count_if()
 5. location = find(location, v.end(), 2);
 6. auto location = find(s.begin(), s.end(), 'a');
 7. result = find_if_not(v.begin(), v.end(), [](auto elem) { return elem % 2 != 0; });
@@ -15,4 +15,6 @@
 13. result = adjacent_find(result, v.end());
 14. sort(begin(smallToBig), end(smallToBig), [](int elem1, int elem2) {return elem1 < elem2; }); // smallToBig
 	sort(begin(bigToSmallByAbsoluteValue), end(bigToSmallByAbsoluteValue), [](int elem1, int elem2) {return abs(elem1) > abs(elem2); }); // bigToSmallByAbsoluteValue
-15. 
+15. std::sort(begin(staff), end(staff), [](Employee elem1, Employee elem2) {return elem1.getSalary() < elem2.getSalary(); });
+	std::stable_sort(begin(staff), end(staff), [](Employee elem1, Employee elem2) {return elem1.getSalary() < elem2.getSalary(); });
+16. 
