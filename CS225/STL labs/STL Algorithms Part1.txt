@@ -1,3 +1,5 @@
+GROUP 11 : sinil.gang & minseok.sung
+
 1. twos = count(v.begin(), v.end(), target);
 2. odds = count_if(v.begin(), v.end(), [](int i) { return i % 2; });	// data type of argument in lambda can be a auto.
 3. longmonths = count_if(monthlengths.begin(), monthlengths.end(), [](std::pair<const int, int> p) { return (p.second== 31) ? p.first : 0; });
@@ -17,4 +19,22 @@
 	sort(begin(bigToSmallByAbsoluteValue), end(bigToSmallByAbsoluteValue), [](int elem1, int elem2) {return abs(elem1) > abs(elem2); }); // bigToSmallByAbsoluteValue
 15. std::sort(begin(staff), end(staff), [](Employee elem1, Employee elem2) {return elem1.getSalary() < elem2.getSalary(); });
 	std::stable_sort(begin(staff), end(staff), [](Employee elem1, Employee elem2) {return elem1.getSalary() < elem2.getSalary(); });
-16. 
+16. bool isSortedBigToSmall = is_sorted(begin(bigToSmall), end(bigToSmall), [](int elem1, int elem2) {return elem1 > elem2; });
+17. int high = *max_element(begin(v), end(v));
+	int low = *min_element(begin(v), end(v));
+
+	high = v.back(); 
+	low = v.front();
+	
+	auto location = upper_bound(begin(v), end(v), 3);
+	location = lower_bound(begin(v), end(v), 0);
+
+18. shuffle(begin(v), end(v), generator);
+19. 
+Partial sort up to position 6 looks like:
+	-9 -6 -2 0 0 0 7 4 3 2 1 1 9
+v2 is sorted until location: 7
+retrieved the smallest 3 elements from an unsorted collection. Looks like:
+	-9 -6 -2 
+
+20. nth_element(begin(v), middle_location, end(v));
