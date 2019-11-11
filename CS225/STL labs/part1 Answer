@@ -1,0 +1,18 @@
+1. twos = count(v.begin(), v.end(), 2);
+2. odds = count_if(v.begin(), v.end(), [](int i) { return i % 2; });
+3. longmonths = count_if(monthlengths.begin(), monthlengths.end(), [](std::pair<const int, int> p) { return (p.second== 31) ? p.first : 0; });
+4. 	allAreOdd = (count_if(v.begin(), v.end(), [](int i) {return i % 2; }) == v.size());
+	noneAreOdd = !count_if(v.begin(), v.end(), [](int i) {return i % 2; });
+	anyAreOdd = count_if(v.begin(), v.end(), [](int i) {return i % 2; });
+5. location = find(location, v.end(), 2);
+6. auto location = find(s.begin(), s.end(), 'a');
+7. result = find_if_not(v.begin(), v.end(), [](auto elem) { return elem % 2 != 0; });
+8. 	auto result = find_first_of(v.begin(), v.end(), primes.begin(), primes.end());
+9. auto result = search(v.begin(), v.end(), subsequence.begin(), subsequence.end());
+10. auto location = search(s.begin(), s.end(), substring.begin(), substring.end());
+11. auto result = find_end(v.begin(), v.end(), subsequence.begin(), subsequence.end());
+12. auto result = search_n(v.begin(), v.end(), numberOfConsecutiveTargets, target);
+13. result = adjacent_find(result, v.end());
+14. sort(begin(smallToBig), end(smallToBig), [](int elem1, int elem2) {return elem1 < elem2; }); // smallToBig
+	sort(begin(bigToSmallByAbsoluteValue), end(bigToSmallByAbsoluteValue), [](int elem1, int elem2) {return abs(elem1) > abs(elem2); }); // bigToSmallByAbsoluteValue
+15. 
