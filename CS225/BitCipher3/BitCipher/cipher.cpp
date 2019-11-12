@@ -19,14 +19,15 @@ std::string data = { " etaoinshrdlcumwfgypbvkjxqz" };
 int numBits(int value);
 int GetNumGroups();
 
-class BitStream {
+class BitStream : public std::vector<bool>
+{
 private:
 	struct BitsData;
 	const int sizeOfChar = 8;
 public:
 	BitStream()
 	{
-		bits.clear();
+		clear();
 	}
 	BitStream(const std::vector<char>& compressed)
 		: BitStream()
@@ -35,7 +36,6 @@ public:
 		const size_t sizeOfCompressed = compressed.size();
 		for (size_t compressedCount = 0; compressedCount < sizeOfCompressed; ++compressedCount)
 		{
-			char c = compressed.at(compressedCount);
 			StoreCharacter(compressed.at(compressedCount));
 		}
 	}
@@ -43,12 +43,12 @@ public:
 	{
 		return BitsData(*this, index);
 	}
-	operator const std::vector<char>() const
+	operator const std::vector<char>() const noexcept
 	{
 		// The loop to convert from vector<bool> to vector<char>
 		std::vector<char> result;
 
-		const size_t sizeOfBits = bits.size();
+		const size_t sizeOfBits = size();
 		for (size_t bitsCount = 0; bitsCount < sizeOfBits; bitsCount += 8)
 		{
 			result.push_back(LoadCharacter(bitsCount, sizeOfBits));
@@ -59,19 +59,19 @@ public:
 
 private:
 	// Helper functions
-	void StoreCharacter(char character)
+	void StoreCharacter(char character) noexcept
 	{
 		for (int bitCount = sizeOfChar - 1; bitCount >= 0; --bitCount)
 		{
-			bits.push_back(character & (1 << bitCount));
+			push_back(character & (1 << bitCount));
 		}
 	}
-	char LoadCharacter(int index, int totalSize) const
+	char LoadCharacter(size_t index, size_t totalSize) const noexcept
 	{
 		char resultContainer = 0;
 		for (int count = sizeOfChar - 1; count >= 0 && index < totalSize; --count)
 		{
-			resultContainer |= bits.at(index++) << count;
+			resultContainer |= static_cast<char>(at(index++) << count);
 		}
 		return resultContainer;
 	}
@@ -86,33 +86,33 @@ private:
 			:stream(bitStream), pos(index) {}
 
 		// Invoked when proxy is used to modify the value.
-		void operator = (const bool& rhs)
+		BitsData& operator = (const bool& rhs) noexcept
 		{
 			// If bits is too small to store value, make it large.
-			while (pos >= stream.bits.size())
+			while (pos >= stream.size())
 			{
-				stream.bits.push_back(false);
+				stream.push_back(false);
 			}
 			// Assign data
-			stream.bits.at(pos) = rhs;
+			stream.at(pos) = rhs;
+
+			return *this;
 		}
 
 
-		bool EndOfData()
+		bool EndOfData() const noexcept
 		{
 			// If bits has no more than (current position + the number of group bits) elements, left data of bits are invalid data.
 			// The reason why is at least, bits should have 1 + the number of group bits.
-			return (pos+ numBits(GetNumGroups() - 1)) >= stream.bits.size();
+			return (pos+ numBits(GetNumGroups() - 1)) >= stream.size();
 		}
 
-		char operator<<(int i)
+		char operator<<(int i) const noexcept
 		{
-			return stream.bits.at(pos) << i;
+			return static_cast<char>(stream.at(pos) << i);
 		}
 
 	};
-
-	std::vector<bool> bits;
 };
 
 int ReadBits(BitStream& stream, int& index, int numBits) {

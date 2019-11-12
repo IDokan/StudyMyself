@@ -1,3 +1,9 @@
+/*
+ * sinil.gang
+ * Lab 5 - 2D Transformation
+ * CS200
+ * Fall 2019
+ */
 #include "Transform.h"
 
 namespace
@@ -6,27 +12,24 @@ namespace
 	constexpr float PIinDegree = 180.f;
 }
 
-// Note that u and v is not guaranteed if they are already normalized.
 Matrix WorldToRelative(const Vector& u, const Vector& v, const Point& C)
 {
-	Vector uNor = Normalize(u);
-	Vector vNor = Normalize(v);
+	const Vector uNor = Normalize(u);
+	const Vector vNor = Normalize(v);
+	const Vector position(C.x, C.y);
 	return Matrix(
-		Hcoord(uNor.x, vNor.x, 0),
-		Hcoord(uNor.y, vNor.y, 0),
-		C
+		Vector(uNor.x, vNor.x),
+		Vector(uNor.y, vNor.y),
+		Point(-Dot(position, uNor), -Dot(position, vNor))
 	);
 }
 
 Matrix RelativeToWorld(const Vector& u, const Vector& v, const Point& C)
 {
-	Vector uNor = Normalize(u);
-	Vector vNor = Normalize(v);
-	Vector position(C.x, C.y);
+	const Vector uNor = Normalize(u);
+	const Vector vNor = Normalize(v);
 	return Matrix(
-		uNor,
-		vNor,
-		Point(Dot(position, uNor), Dot(position, vNor))
+		uNor, vNor, C
 	);
 }
 
