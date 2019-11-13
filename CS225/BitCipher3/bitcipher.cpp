@@ -19,66 +19,45 @@ std::string data = { " etaoinshrdlcumwfgypbvkjxqz" };
 int numBits(int value);
 int GetNumGroups();
 
-class BitStream : public std::vector<bool>
+class BitStream : public std::vector<char>
 {
 private:
 	struct BitsData;
-	const int sizeOfChar = 8;
+	static const int sizeOfChar = 8;
 public:
 	BitStream()
 	{
 		clear();
 	}
-	BitStream(const std::vector<char>& compressed)
-		: BitStream()
+	BitStream(const std::vector<char> compressed)
+		: vector(compressed)
 	{
-		// The loop to convert from vector<char> to vector<bool>
-		const size_t sizeOfCompressed = compressed.size();
-		for (size_t compressedCount = 0; compressedCount < sizeOfCompressed; ++compressedCount)
-		{
-			StoreCharacter(compressed.at(compressedCount));
-		}
+			
 	}
 	BitsData operator[](const size_t index) noexcept
 	{
 		return BitsData(*this, index);
 	}
-	operator const std::vector<char>() const noexcept
-	{
-		// The loop to convert from vector<bool> to vector<char>
-		std::vector<char> result;
-
-		const size_t sizeOfBits = size();
-		for (size_t bitsCount = 0; bitsCount < sizeOfBits; bitsCount += 8)
-		{
-			result.push_back(LoadCharacter(bitsCount, sizeOfBits));
-		}
-
-		return result;
-	}
 
 private:
-	// Helper functions
-	void StoreCharacter(char character) noexcept
+	static size_t GetOffset(size_t position)
 	{
-		for (int bitCount = sizeOfChar - 1; bitCount >= 0; --bitCount)
-		{
-			push_back(character & (1 << bitCount));
-		}
-	}
-	char LoadCharacter(size_t index, size_t totalSize) const noexcept
-	{
-		char resultContainer = 0;
-		for (int count = sizeOfChar - 1; count >= 0 && index < totalSize; --count)
-		{
-			resultContainer |= at(index++) << count;
-		}
-		return resultContainer;
+		return (7 - (position % sizeOfChar));
 	}
 	
+private:
 	// Proxy struct
 	struct BitsData
 	{
+	private:
+		void IncreaseSizeIfNeeded(size_t currentCharSize)
+		{
+			while (currentCharSize >= stream.size())
+			{
+				stream.push_back(0);
+			}
+		}
+	public:
 		BitStream& stream;
 		size_t pos;
 
@@ -88,28 +67,23 @@ private:
 		// Invoked when proxy is used to modify the value.
 		BitsData& operator = (const bool& rhs) noexcept
 		{
-			// If bits is too small to store value, make it large.
-			while (pos >= stream.size())
-			{
-				stream.push_back(false);
-			}
-			// Assign data
-			stream.at(pos) = rhs;
+			const size_t streamIndex = pos / sizeOfChar;
+			
+			IncreaseSizeIfNeeded(streamIndex);
+
+			stream.at(streamIndex) |= rhs << GetOffset(pos);
 
 			return *this;
 		}
 
-
 		bool EndOfData() const noexcept
 		{
-			// If bits has no more than (current position + the number of group bits) elements, left data of bits are invalid data.
-			// The reason why is at least, bits should have 1 + the number of group bits.
-			return (pos+ numBits(GetNumGroups() - 1)) >= stream.size();
+			return ((pos+ numBits(GetNumGroups() - 1))/sizeOfChar) >= stream.size();
 		}
 
-		char operator<<(int i) const noexcept
+		int operator<<(int i) const noexcept
 		{
-			return stream.at(pos) << i;
+			return static_cast<bool>(stream.at(static_cast<size_t>(pos/sizeOfChar)) & (1<<GetOffset(pos)))<< i;
 		}
 
 	};
