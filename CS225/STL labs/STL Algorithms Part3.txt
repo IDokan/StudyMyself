@@ -1,0 +1,47 @@
+1. 	fill_n(back_inserter(v2), 6, 2);
+	generate_n(back_inserter(v2), 10, [n = 0]()mutable
+	{
+		return n++;
+	});
+	generate_n(front_inserter(q3), 10, [n = 0]() mutable
+	{
+		return n++;
+	});
+
+2. 	generate_n(back_inserter(v2), 10, [n = 0]()mutable
+	{
+		return n += 2;
+	});
+
+3.	copy_if(begin(v1), end(v1), back_inserter(v2), [](int val)
+	{
+			return (val % 2) == 0;
+	});
+
+4.	unique_copy(begin(v1), end(v1), back_inserter(v2));
+
+5.	reverse_copy(begin(sentence), end(sentence), back_inserter(reverse));
+
+6. 	copy(rbegin(v1), rend(v1), back_inserter(v2));
+
+7.	auto ritr = find(rbegin(v1), rend(v1), target_value);
+	position = rend(v1) - ritr;
+
+8.	auto itrToThree = find(begin(v1), end(v1), targetValue);
+
+	auto itrToNine = find(begin(v1), end(v1), targetValue);
+	isInFirstHalf = (itrToNine - begin(v1) < end(v1) - itrToNine);
+
+9.
+	1)	try to initialize 5 of const int array with 3, 1, 6, 0, 2
+	2)	get a next iterator of it, but the next iterator didn't use
+	3)	try to assign 7 into it, but it caused compile error because it is const iterator
+	4)	store a value that stored in it into local int variable which named i
+	5)	Declare a new const int vector which named vc but it cause compile error because const int should be initialized with declaration
+	6)	same issue with 3rd line, cause compile error too.
+	7)	get a const begin iterator of ca and store in it. However, it faild because there is no matched operator between iterator and const iterator
+	8)	Try to assign 7 into a value of it2
+	9)	get a const begin iterator of v2 and assign it into auto variable which named cit
+	10)	Try to assign 7 into a value of cit. However, it caused compile error because cit is a const iterator even though v2 is not a const vector or vector that contains any const value.
+
+10.	
