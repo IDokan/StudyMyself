@@ -63,6 +63,12 @@ team_t team = {
 
 #define TAG 0x7
 
+#define PRED_PTR(ptr) ((char*)(ptr))
+#define SUCC_PTR(ptr) ((char*)(ptr)+WSIZE)
+
+#define PRED(ptr) (*((char**)(ptr)))
+#define SUCC(ptr) (*((char**)SUCC_PTR(ptr)))
+
 /* END of helper MACRO*/
 
 /* Global Variables */
@@ -114,53 +120,71 @@ void* segregatedFreeList[SIZEOFSEGREGATEDLIST];
 static void* extendHeap(size_t size)
 {
 	// make argument adjusted size, and store it in local variable.
+	size_t adjustedSize = ALIGN(size);
 	
 	// call mem_sbrk(adjusted size), if return value is -1, it is error
-
-	// Set Header and Footer
-	// Insert node to memory which allocated in here
-
-	// return return value of coalesce();
-	// Argument is an allocated memory 
-
-	//////////////////////////////////////////////////////////
-
-	char* resultPtr;
-	size_t aSize;
-
-	/* Allocate an even number of words to maintain alighment */
-	aSize = (size % 2) ? (size + 1) * WSIZE : size * WSIZE;
-	if((long)(resultPtr = mem_sbrk(size)) == -1)
+	void* resultPtr = mem_sbrk(adjustedSize);
+	if ((long)resultPtr == -1)
 	{
 		return NULL;
 	}
 
-	/* Initialize free block header / footer and the epilogue header */
-	PUT(HDRP(resultPtr), PACK(size, 0));			/* Free block header */
-	PUT(FTRP(resultPtr), PACK(size, 0));			/* Free block footer */
-	PUT(HDRP(NEXT_BLKP(resultPtr)), PACK(0, 1));	/* New epilogue header */
+	// Set Header and Footer
+	PUT(HDRP(resultPtr), PACK(adjustedSize, 0));
+	PUT(FTRP(resultPtr), PACK(adjustedSize, 0));
+	PUT(HDRP(NEXT_BLKP(resultPtr)), PACK(0, 1));
+	// Insert node to memory which allocated in here
+	// TODO: is it adjustedSize or size??????????
+	InsertNode(resultPtr, adjustedSize);
 
+	// return return value of coalesce();
+	return Coalesce(resultPtr);
 }
 
-static void insertNode(void* ptr, size_t size)
+static void InsertNode(void* ptr, size_t size)
 {
 	// Select segregated list
-	// In this case, result value should store whole size
+	size_t selectedIndex = size / ALIGNMENT;
+
+	// If index is invalid,
+	if (selectedIndex >= SIZEOFSEGREGATEDLIST)
+	{
+		return;
+	}
+
+	// Get a list that listed proper nodes
+	void* selectedList = segregatedFreeList[selectedIndex];
 
 	// search correct block followed given size in segregated free list 
-	// In this loop, you should find search_ptr, insert_ptr
+	void* previousNode = nullptr;
+	void* nextNode = selectedList;
+	while(nextNode != NULL && size > GET_SIZE(HDRP(nextNode)))
+	{
+		previousNode = nextNode;
+		nextNode = SUCC(nextNode);
+	}
 
-	// If both search_ptr and insert_ptr are not NULL,
+	// If both previous node and next node are not NULL,
+	if (previousNode != NULL && nextNode != NULL)
+	{
+		// PUT is okay??? I'm not sure...
+		PUT(PRED_PTR(ptr), previousNode);
+		PUT(SUCC_PTR(previousNode), ptr);
+		PUT(SUCC_PTR(ptr), nextNode);
+		PUT(PRED_PTR(nextNode), ptr);
+	}
+
+	// If previous node is NOT NULL but next node is NULL,
 	// ...
-	// If search_ptr is NOT NULL but insert_ptr is NULL,
+	
+	// If previous node is NULL, next node is NOT NULL,
 	// ...
-	// If search_ptr is NULL, insert_ptr is NOT NULL,
-	// ...
-	// If both search_ptr and inser_ptr are NULL,
+	
+	// If both previous node and next node are NULL,
 	// ... 
 }
 
-static void* coalesce(void* ptr)
+static void* Coalesce(void* ptr)
 {
 	// Get a flag that indicates previous block and next block is allocated or not
 	// Get a Size of pointer
@@ -229,11 +253,11 @@ int mm_init(void)
 	}
 
 	// Set Prologue block, Epilogue block
-	PUT(heapListP, 0);		// Alighment padding
+	PUT(heapListP, 0);		// Alighment padding because the size of Epilogue block is not a DSIZE
 	PUT(heapListP + (1*WSIZE), PACK(DSIZE, 1));	// Prologue header
 	PUT(heapListP + (2*WSIZE), PACK(DSIZE, 1));	// Prologue footer
 	PUT(headListP + (3*WSIZE), PACK(0, 1));		// Epilogue header
-	heapListP += (2*WSIZE);
+	heapListP += (2*WSIZE);		// Make heapListP point to payload of Prologue blocks
 
 	// If the return value of extend_heap is NULL, return -1
 	if(extend_heap(CHUNKSIZE/WSIZE) == NULL)
