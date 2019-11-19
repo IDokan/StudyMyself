@@ -1,0 +1,38 @@
+<meta charset="utf-8">
+
+# CS180 Lab Sockets / Echo Server/Client
+
+## Information
+For this lab you will be creating a small echo server and echo chat program.![](echo_client_server.png)
+
+The purpose of this lab is to get introduced to the sockets api. Look for all of the TODO comments and implement them.
+
+## Programming Section
+
+### socets.h / sockets.cpp
+The sockets API is implemented by all of the operating systems, but there are small differences. The header files to get access to the functions are different and some of the function names are different. Even the socket type is slightly different.
+
+The `sockets.h` interface is meant to be a helper so that you can include it and start using the sockets API right away for both Linux and Windows.
+
+### echo client
+This is a command line program that simply tries to connect to a echo server. It will loop to get the user's input and then send that input to the echo server. It will then wait to receive the message back and print it. This is repeated until `quit` is typed in.
+
+### echo server
+
+This is a command line program that waits for a client to connect. When it does, it receives it's input. Then sends it back to the client. It repeats this until the client closes it's connection. If the client sends a `kill server` message then it will stop running after the client closes it's connection.
+
+## Tips
+
+Start with implementing the `sockets.cpp` and `echo_client.cpp` first. Test it against the server sample exe.
+
+## Stretch goal
+
+Right now the server can only service one client at a time. Modify the server program to service multiple clients concurrently.
+
+## What to submit
+
+In CS180_login_sockets_echo.zip submit: `echo_client.cpp`,  `echo_server.cpp`,  `make.bat`,  `makefile`,  `sockets.cpp`,  and `sockets.h`.
+
+
+
+<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js" charset="utf-8"></script><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js" charset="utf-8"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>

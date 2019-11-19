@@ -1,0 +1,83 @@
+1.
+same = equal(begin(a), end(a), begin(b), end(b));
+same = equal(begin(a), begin(a)+2, begin(b), begin(b)+2);
+
+2.
+auto mismatchFor = mismatch(begin(a), end(a), begin(b), end(b));
+mismatchFor = mismatch(begin(a), end(a), begin(b), end(b));
+
+3.
+int total = accumulate(begin(a), end(a), 0, [](int sum, int val) {return (val % 2 == 0) ? sum + val : sum; });
+total = accumulate(begin(a), end(a), 0, [](int sum, int val) {return (val % 2 == 1) ? sum + val : sum; });
+total = accumulate(begin(a), end(a), 1, std::multiplies<int>());
+
+4. 
+string allwords = accumulate(begin(words), end(words), string(""));
+allwords = accumulate(begin(words), end(words), string("Rudy Says:"), [](string sum, string val) {return sum + " " + val; });
+string numbersToString = accumulate(begin(a), end(a), string("Collection accumulate to string:"), [](string sum, int val) {return sum + " " + to_string(val); });
+
+5.
+for_each(begin(b), end(b), [](int& val) { val = 2; });
+auto it = find(begin(b), end(b), targetValue);
+for_each(it, end(b), [](int& val) { val = 0; });
+
+6. 
+copy(begin(source), end(source), begin(v2));
+vector<int> v3 = source;
+auto it = find(begin(source), end(source), targetValue);
+copy(begin(source), it + 1, begin(v4));
+
+7.
+copy_if(begin(source), end(source), begin(v5), [](int val) { return val % 2 == 0; });
+
+8.
+copy_n(begin(source) + 1, howMany, begin(v5) + 2);
+
+9.
+copy_backward(begin(v3), begin(v3) + 3, end(source));
+copy_backward(begin(v3), end(v3) - 1, end(v3));
+
+10.
+auto logicalEndLocation = remove(begin(source), end(source), valueToRemove);
+source.erase(logicalEndLocation, end(source));
+source.erase(remove(begin(source), end(source), valueToRemove), end(source));
+
+11.
+auto newend2 = remove_if(begin(vr), end(vr), [](Resource& re) { return re.getValue() == 8; });
+
+12.
+fill(begin(v), end(v), fillValue);
+fill_n(begin(v), howMany, fillValue);
+
+13.
+iota(begin(v), end(v), startValue);
+iota(begin(v) + 4, end(v), startValue);
+
+14.
+generate(begin(v), end(v), [&value]() {return --value; });
+generate_n(begin(v), howMany, [&value]() {return value *= 2; });
+
+15.
+replace(begin(v), end(v), valueToReplace, newValue);
+replace_if(begin(v), end(v), [minimumValue](int val) {return val < minimumValue; }, newValue);
+
+16.
+transform(begin(source), end(source), begin(source), [](int val) -> int { return val * 2; });
+transform(begin(source), end(source), begin(destination), [](int val) -> int {return val / 2; });
+
+17.
+transform(begin(source), end(source) - 1, begin(source) + 1, begin(destination), [](int val1, int val2) -> int { return val1 - val2; });
+
+18.
+transform(begin(sourceInt), end(sourceInt), begin(sourceFloat), begin(destination), [](int intVal, float floatVal) -> double { return intVal / floatVal; });
+
+19.
+source.erase(unique(begin(source), end(source)), end(source));
+
+20.
+unique_copy(begin(source), end(source), begin(destination));
+
+21.
+reverse(begin(sentence), end(sentence));
+iter_swap(begin(v), end(v) - 1);
+reverse_copy(begin(sentence), end(sentence), begin(destination));

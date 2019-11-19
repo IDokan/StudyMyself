@@ -1,3 +1,5 @@
+sinil.gang
+
 1. 	fill_n(back_inserter(v2), 6, 2);
 	generate_n(back_inserter(v2), 10, [n = 0]()mutable
 	{
@@ -45,3 +47,51 @@
 	10)	Try to assign 7 into a value of cit. However, it caused compile error because cit is a const iterator even though v2 is not a const vector or vector that contains any const value.
 
 10.	
+	sort(begin(player_quests), end(player_quests),
+		[=](const Quest& q1, const Quest& q2) {
+			return abs(q1.Location - playerLocation) <
+				abs(q2.Location - playerLocation);
+		});
+	...
+	copy_n(begin(player_quests), topNCount, begin(topQuests));
+
+					↓
+
+	partial_sort_copy(begin(player_quests), end(player_quests), begin(topQuests), end(topQuests), [=](const Quest& q1, const Quest& q2)
+		{
+			return abs(q1.Location - playerLocation) <
+				abs(q2.Location - playerLocation);
+		});
+
+11. 
+	auto first = find(begin(tasks), end(tasks), 2);
+	auto middle = find(begin(tasks), end(tasks), 4);
+	auto last = find(begin(tasks), end(tasks), 5);
+
+	first = find(begin(tasks), end(tasks), 3);
+	middle = find(begin(tasks), end(tasks), 8);
+	last = find(begin(tasks), end(tasks), 9);
+	rotate(first, middle, last);
+
+12.
+	partition(begin(monsters), end(monsters), [](const Monster& m)
+		{
+			return (m.Affinity == MonsterAffinity::Psychic);
+		});
+
+	stable_partition(begin(monsters), end(monsters), [](const Monster& m)
+		{
+			return (m.Affinity == MonsterAffinity::Normal);
+		});
+
+13. 
+	auto selected = stable_partition(begin(numbers), end(numbers), [](int i)
+		{
+			return i % 2;
+		});
+	
+	auto last = find_if(begin(PlayersMonsters), end(PlayersMonsters), [](const Monster& m)
+		{
+			return (m.Name == "Djinn");
+		});
+	rotate(begin(PlayersMonsters), selected, last);
