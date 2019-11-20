@@ -149,7 +149,7 @@ static void* extendHeap(size_t size)
 static void InsertNode(void* ptr, size_t size)
 {
 	// Select segregated list
-	size_t selectedIndex = size / ALIGNMENT;
+	size_t selectedIndex = GetIndex(size);
 
 	// If index is invalid,
 	if (selectedIndex >= SIZEOFSEGREGATEDLIST)
@@ -285,7 +285,7 @@ static void* Coalesce(void* ptr)
 
 static void deleteNode(void* ptr)
 {
-	size_t selectedIndex = GET_SIZE(HDRP(ptr));
+	size_t selectedIndex = GetIndex(GET_SIZE(HDRP(ptr)));
 	// Get a PRED and SUCC 
 	void* predecessor = PRED(ptr);
 	void* successor = SUCC(ptr);
@@ -317,6 +317,55 @@ static void deleteNode(void* ptr)
 		PUT(SUCC_PTR(predecessor), successor);
 		PUT(PRED_PTR(successor), predecessor);
 	}
+}
+
+size_t GetIndex(size_t size)
+{
+	int bit16, bit8, bit4, bit2, bit1;
+
+	bit16 = !!(x >> 16) << 4;
+	x = x >> bit16;
+
+	bit8 = !!(x >> 8) << 3;
+	x = x >> bit8;
+
+	bit4 = !!(x >> 4) << 2;
+	x = x >> bit4;
+
+	bit2 = !!(x >> 2) << 1;
+	x = x >> bit2;
+
+	bit1 = !!(x >> 1);
+	x = x >> bit1;
+
+	return bit16 + bit8 + bit4 + bit2 + bit1;
+}
+
+void place(void* ptr, size_t wantedSize)
+{
+	size_t sizeOfFreeBlock = GET_SIZE(HDRP(ptr));
+	size_t leftSize = sizeOfFreeBlock - wantedSize;
+
+	// delete ptr in segregated free list
+	deleteNode(ptr);
+
+	// If remain padding is too many,
+	// 2 * DSIZE derived from (Header, Footer, payload)
+	if (leftSize < 2*DSIZE)
+	{
+		// No need to split
+		PUT(HDRP(ptr), PACK(sizeOfFreeBlock, ALLOCATED));
+		PUT(FTRP(ptr), PACK(sizeOfFreeBlock, ALLOCATED));
+	}
+	else
+	{
+		PUT(HDRP(ptr), PACK(wantedSize, ALLOCATED));
+		PUT(FTRP(ptr), PACK(wantedSize, ALLOCATED));
+		PUT(HDRP(NEXT_BLKP(ptr)), PACK(leftSize, FREED));
+		PUT(FTRP(NEXT_BLKP(ptr)), PACK(leftSize, FREED));
+		InsertNode(NEXT_BLKP(ptr), leftSize);
+	}
+	return ptr;
 }
 
 // End of Helper functions
@@ -376,17 +425,6 @@ int mm_init(void)
  */
 void *mm_malloc(size_t size)
 {
-    int newsize = ALIGN(size + SIZE_T_SIZE);
-    void *p = mem_sbrk(newsize);
-    if (p == (void *)-1)
-	return NULL;
-    else {
-        *(size_t *)p = size;
-        return (void *)((char *)p + SIZE_T_SIZE);
-    }
-
-/////////////////////////////////////////////////////////////
-
     size_t aSize; 		/* Adjusted block size */
     size_t extendSize;	/* Amount to extend heap if no fit */
     char* resultPtr;	/* Pointer that will be returned */
@@ -408,18 +446,27 @@ void *mm_malloc(size_t size)
     	aSize = (size + (DSIZE) + (DSIZE - 1)) & ~TAG;
     }
 
-    // It will be obsolete, when segregated is worked
-    /* Search the free list for a fit */
-    if ((resultPtr = find_fit(aSize)) != NULL)
+    /* Find a block with Segregate List */
+    		/* if found block is not null, break */
+
+    /* get a proper size first */
+    size_t selectedIndex = GetIndex(aSize);
+    resultPtr = segregatedFreeList[selectedIndex];
+
+    /* get a precise block that has applicable size in the free list by walking */
+	/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ */
+	/* Is it okay to search only in selected index?? */
+	/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★*/
+    while(resultPtr != NULL && aSize > GET_SIZE(HDRP(resultPtr)))
     {
-    	place(resultPtr, aSize);
-    	return bp;
+    	resultPtr = SUCC(resultPtr);
     }
 
-    /* Find a block with Segregate List */
-    	/* get a proper size first */
-    		/* if found, get a precise block in the free list by walking */
-    		/* if found block is not null, break */
+    if (resultPtr != NULL)
+    {
+    	place(resultPtr, aSize);
+    	return resultPtr;
+    }
 
     /* No fit found. Get more memory and place the block */
     extendSize = MAX(aSize, CHUNKSIZE);
@@ -427,8 +474,8 @@ void *mm_malloc(size_t size)
     {
     	return NULL;
     }
-    place(bp, aSize);
-    return bp;
+    place(resultPtr, aSize);
+    return resultPtr;
 }
 
 /*
@@ -498,17 +545,3 @@ void *mm_realloc(void *ptr, size_t size)
     /* Calculate block buffer */
     /* ?????????????????????? */
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
