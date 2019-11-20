@@ -120,6 +120,16 @@ void* segregatedFreeList[SIZEOFSEGREGATEDLIST];
 
 // Helper functions
 
+static int IsEpilogue(void* ptr)
+{
+	if (ptr == NULL)
+	{
+		return NULL;
+	}
+
+	return (GET_SIZE(HDRP(ptr)) == 0) && (GET_ALLOC(HDRP(ptr)) == ALLOCATED);
+}
+
 static void* extendHeap(size_t size)
 {
 	// make argument adjusted size, and store it in local variable.
@@ -405,10 +415,7 @@ int mm_init(void)
 	heapListP += (2*WSIZE);		// Make heapListP point to payload of Prologue blocks
 
 	// If the return value of extend_heap is NULL, return -1
-	/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ */
-	/* Why extend as much as <CHUNKSIZE/WSIZE>?????? */
-	/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★*/
-	if(extend_heap(CHUNKSIZE/WSIZE) == NULL)
+	if(extend_heap(CHUNKSIZE) == NULL)
 	{
 		return -1;
 	}
@@ -518,6 +525,44 @@ void mm_free(void *ptr)
  */
 void *mm_realloc(void *ptr, size_t size)
 {
+	// handle for defined situation
+	if (ptr == NULL)
+	{
+		return mm_malloc(size);
+	}
+	if (size == 0)
+	{
+		mm_free(ptr);
+		return ;
+	}
+
+	size_t currentSize = GET_SIZE(HDRP(ptr));
+	// size > size of ptr
+	if (size > currentSize)
+	{
+		// check next block.
+		// CASE 1 : Epilogue block
+		void* nextBlock = NEXT_BLKP(ptr);
+		if (IsEpilogue(nextBlock))
+		{
+			// Do something
+			// Expand heap
+		}
+		// CASE 2 : Free block
+		else if(GET_ALLOC(HDRP(nextBlock)) == FREED)
+		{
+			// 
+		}
+		// CASE 3 : Allocated block
+		else if(GET_ALLOC(HDRP(nextBlock)) == ALLOCATED)
+		{
+			// 
+		}
+	}
+	// size <= size of ptr
+
+
+///////////////////////////////////////////////////////////////////
     void *oldptr = ptr;
     void *newptr;
     size_t copySize;
