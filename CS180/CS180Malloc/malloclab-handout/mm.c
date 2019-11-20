@@ -229,7 +229,7 @@ static void* Coalesce(void* ptr)
 
 	// CASE 2
 	// If previous block is allocated and next block is freed,
-	if (isPreviousAllocated == ALLOCATED && isNextAllocated == FREED)
+	else if(isPreviousAllocated == ALLOCATED && isNextAllocated == FREED)
 	{
 		// delete node of ptr and next block of ptr
 		deleteNode(NEXT_BLKP(ptr));
@@ -239,33 +239,84 @@ static void* Coalesce(void* ptr)
 		// Update pointers' header and footer with updated size
 		PUT(FTRP(NEXT_BLKP(ptr)), 	PACK(size, 0));
 		PUT(HDRP(ptr), 				PACK(size, 0));
-			// Notice that they are segregated header and footer!!!
 	}
 
 	// CASE 3
-	// if previous block is freed and next block is allocated
-	// delete node of ptr and previous block of ptr
-	// add size of previous block of pointer into current size
-	// Update pointers' header and footer with updated size
-		// Notice that they are segregated header and footer!!!
-	// Update pointer to make pointer points to previous block of pointed block
+	// if previous block is freed and next block is allocated,
+	else if(isPreviousAllocated == FREED && isNextAllocated == ALLOCATED)
+	{
+		// delete node of ptr and previous block of ptr
+		deleteNode(PREV_BLKP(ptr));
+		deleteNode(ptr);
+
+		// add size of previous block of pointer into current size
+		size += GET_SIZE(HDRP(PREV_BLKP(ptr)));
+		// Update pointers' header and footer with updated size
+		PUT(FTRP(ptr),				PACK(size, 0));
+		PUT(HDRP(PREV_BLKP(ptr)),	PACK(size, 0));		
+
+		// Update pointer to make pointer points to previous block of pointed block
+		ptr = PREV_BLKP(ptr);
+	}
 
 	// CASE 4
 	// if both blocks are freed
-	// delete node of ptr, previous block of ptr, and next block of ptr
-	// add size of both blocks into current size
-	// Update pointers' header and footer with updated size
-		// Notice that they are segregated header and footer!!!
-	// Update pointer to make pointer points to previous block of pointed block
+	else if(isPreviousAllocated == FREED && isNextAllocated == FREED)
+	{
+		// delete node of ptr, previous block of ptr, and next block of ptr
+		deleteNode(PREV_BLKP(ptr));
+		deleteNode(NEXT_BLKP(ptr));
+		deleteNode(ptr);
+		// add size of both blocks into current size
+		size += (GET_SIZE(HDRP(PREV_BLKP(ptr))) + GET_SIZE(HDRP(NEXT_BLKP(ptr))));
+		// Update pointers' header and footer with updated size
+		PUT(HDRP(PREV_BLKP(ptr)), PACK(size, 0));
+		PUT(FTRP(NEXT_BLKP(ptr)), PACK(size, 0));
+		// Update pointer to make pointer points to previous block of pointed block
+		ptr = PREV_BLKP(ptr);
+	}
 
 	// Insert node pointer with size
+	InsertNode(ptr);
 
-	// return pointer 
+	// return pointer
+	return ptr; 
 }
 
 static void deleteNode(void* ptr)
 {
-	
+	size_t selectedIndex = GET_SIZE(HDRP(ptr));
+	// Get a PRED and SUCC 
+	void* predecessor = PRED(ptr);
+	void* successor = SUCC(ptr);
+
+	// If predecessor is NULL and successor is NULL,
+	if (predecessor == NULL && successor == NULL)
+	{
+		// Set NULL the list which ptr was.
+		segregatedFreeList[selectedIndex] = NULL;
+	}
+	// If predecessor is NOT NULL and successor is NULL,
+	else if(predecessor != NULL && successor == NULL)
+	{
+		// Set predecessor's succesor ptr as NULL
+		PUT(SUCC_PTR(predecessor), NULL);
+	}
+	// If predecessor is NULL and successor is NOT NULL,
+	else if(predessor == NULL && successor != NULL)
+	{
+		// Set successor's predecessor as NULL
+		PUT(PRED_PTR(successor), NULL);
+		// Set successor as starting node
+		segregatedFreeList[selectedIndex] = successor;
+	}
+	// If both is NOT NULL
+	else if(predecessor != NULL && successor != NULL)
+	{
+		// connect each others
+		PUT(SUCC_PTR(predecessor), successor);
+		PUT(PRED_PTR(successor), predecessor);
+	}
 }
 
 // End of Helper functions
@@ -305,6 +356,7 @@ int mm_init(void)
 	heapListP += (2*WSIZE);		// Make heapListP point to payload of Prologue blocks
 
 	// If the return value of extend_heap is NULL, return -1
+	// Why extend as much as <CHUNKSIZE/WSIZE>??????
 	if(extend_heap(CHUNKSIZE/WSIZE) == NULL)
 	{
 		return -1;
