@@ -69,6 +69,9 @@ team_t team = {
 #define PRED(ptr) (*((char**)(ptr)))
 #define SUCC(ptr) (*((char**)SUCC_PTR(ptr)))
 
+#define ALLOCATED	1
+#define FREED		0
+
 /* END of helper MACRO*/
 
 /* Global Variables */
@@ -134,7 +137,9 @@ static void* extendHeap(size_t size)
 	PUT(FTRP(resultPtr), PACK(adjustedSize, 0));
 	PUT(HDRP(NEXT_BLKP(resultPtr)), PACK(0, 1));
 	// Insert node to memory which allocated in here
-	// TODO: is it adjustedSize or size??????????
+	/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★*/
+	/* TODO: is it adjustedSize or size?????????? */
+	/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★ */
 	InsertNode(resultPtr, adjustedSize);
 
 	// return return value of coalesce();
@@ -168,39 +173,74 @@ static void InsertNode(void* ptr, size_t size)
 	if (previousNode != NULL && nextNode != NULL)
 	{
 		// PUT is okay??? I'm not sure...
+		// For now PUT(p, val)	(*(unsigned int *)(p) = (val)),
+		// May val be casted into (unsigned int)
 		PUT(PRED_PTR(ptr), previousNode);
 		PUT(SUCC_PTR(previousNode), ptr);
 		PUT(SUCC_PTR(ptr), nextNode);
 		PUT(PRED_PTR(nextNode), ptr);
 	}
-
 	// If previous node is NOT NULL but next node is NULL,
-	// ...
-	
+	else if(previousNode != NULL && nextNode == NULL)
+	{
+		PUT(PRED_PTR(ptr), previousNode);
+		PUT(SUCC_PTR(previousNode), ptr);
+		PUT(SUCC_PTR(ptr), NULL);
+	}
 	// If previous node is NULL, next node is NOT NULL,
-	// ...
-	
+	else if(previousNode == NULL && nextNode != NULL)
+	{
+		PUT(PRED_PTR(ptr), NULL);
+		PUT(SUCC_PTR(ptr), nextNode);
+		PUT(PRED_PTR(nextNode), ptr);
+		segregatedFreeList[selectedIndex] = ptr;
+	}
 	// If both previous node and next node are NULL,
-	// ... 
+	else if(previousNode == NULL && nextNode == NULL)
+	{
+		PUT(PRED_PTR(ptr), NULL);
+		PUT(SUCC_PTR(ptr), NULL);
+		segregatedFreeList[selectedIndex] = ptr;
+	}
+
+	return;
 }
 
 static void* Coalesce(void* ptr)
 {
-	// Get a flag that indicates previous block and next block is allocated or not
-	// Get a Size of pointer
 
-	// previous block referred as allocated if reallocation tag is also true
+	// Get a flag that indicates previous block and next block is allocated or not
+	int isPreviousAllocated = GET_ALLOC(PREV_BLKP(ptr));
+	int isNextAllocated = GET_ALLOC(NEXT_BLKP(ptr));
+	// Get a Size of pointer
+	size_t size = GET_SIZE(HDRP(ptr));
+
+	/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ */
+	/* previous block referred as allocated if ★reallocation tag★ is also true */
+	/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ */
 
 	// CASE 1
-	// If both previous block and next block both allocated
-	// Return immediately
+	// If both previous block and next block both allocated,
+	if(isPreviousAllocated == ALLOCATED && isNextAllocated == ALLOCATED)
+	{
+		// Return immediately
+		return ptr;
+	}
 
 	// CASE 2
-	// If previous block is allocated and next block is freed
-	// delete node of ptr and next block of ptr
-	// add size of next block of pointer into current size
-	// Update pointers' header and footer with updated size
-		// Notice that they are segregated header and footer!!!
+	// If previous block is allocated and next block is freed,
+	if (isPreviousAllocated == ALLOCATED && isNextAllocated == FREED)
+	{
+		// delete node of ptr and next block of ptr
+		deleteNode(NEXT_BLKP(ptr));
+		deleteNode(ptr);
+		// add size of next block of pointer into current size
+		size += GET_SIZE(HDRP(NEXT_BLKP(ptr)));
+		// Update pointers' header and footer with updated size
+		PUT(FTRP(NEXT_BLKP(ptr)), 	PACK(size, 0));
+		PUT(HDRP(ptr), 				PACK(size, 0));
+			// Notice that they are segregated header and footer!!!
+	}
 
 	// CASE 3
 	// if previous block is freed and next block is allocated
@@ -221,6 +261,11 @@ static void* Coalesce(void* ptr)
 	// Insert node pointer with size
 
 	// return pointer 
+}
+
+static void deleteNode(void* ptr)
+{
+	
 }
 
 // End of Helper functions
