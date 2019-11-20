@@ -356,7 +356,9 @@ int mm_init(void)
 	heapListP += (2*WSIZE);		// Make heapListP point to payload of Prologue blocks
 
 	// If the return value of extend_heap is NULL, return -1
-	// Why extend as much as <CHUNKSIZE/WSIZE>??????
+	/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ */
+	/* Why extend as much as <CHUNKSIZE/WSIZE>?????? */
+	/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★*/
 	if(extend_heap(CHUNKSIZE/WSIZE) == NULL)
 	{
 		return -1;
@@ -403,8 +405,7 @@ void *mm_malloc(size_t size)
     }
     else
     {
-    	// TODO: Is it same with ((size+(DSIZE)+(DSIZE-1)) & ~TAG)?
-    	aSize = DSIZE * ((size + (DSIZE) + (DSIZE - 1)) / DSIZE);
+    	aSize = (size + (DSIZE) + (DSIZE - 1)) & ~TAG;
     }
 
     // It will be obsolete, when segregated is worked
