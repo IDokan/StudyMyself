@@ -477,7 +477,10 @@ void *mm_malloc(size_t size)
 
     /* No fit found. Get more memory and place the block */
     extendSize = MAX(aSize, CHUNKSIZE);
-    if ((resultPtr = extend_heap(extendSize / WSIZE)) == NULL)
+			/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★*/
+			/* TODO: extendSize / WSIZE ????? */
+			/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ */
+    if ((resultPtr = extendHeap(extendSize / WSIZE)) == NULL)
     {
     	return NULL;
     }
@@ -536,6 +539,16 @@ void *mm_realloc(void *ptr, size_t size)
 		return ;
 	}
 
+	/* Align the given size */
+    if (size <= DSIZE)
+    {
+    	size = 2 * DSIZE;
+    }
+    else
+    {
+    	size = (size + (DSIZE) + (DSIZE - 1)) & ~TAG;
+    }
+
 	size_t currentSize = GET_SIZE(HDRP(ptr));
 	// size > size of ptr
 	if (size > currentSize)
@@ -545,48 +558,78 @@ void *mm_realloc(void *ptr, size_t size)
 		void* nextBlock = NEXT_BLKP(ptr);
 		if (IsEpilogue(nextBlock))
 		{
-			// Do something
-			// Expand heap
+			/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★*/
+			/* TODO: chunk size is okay or remaning size ????? */
+			/* ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ */
+			if (extendHeap(CHUNKSIZE) == NULL)
+			{
+				return NULL;
+			}
+			size_t leftSize = size - currentSize;
+
+			deleteNode(nextBlock);
+
+			// Update header & footer with wanted size
+			PUT(HDRP(ptr), PACK(size, ALLOCATED));
+			PUT(FTRP(ptr), PACK(size, ALLOCATED));
+
+			// Update header & footer of remaining free block and insert it.
+			PUT(HDRP(NEXT_BLKP(ptr)), PACK(CHUNKSIZE - leftSize, FREED));
+			PUT(FTRP(NEXT_BLKP(ptr)), PACK(CHUNKSIZE - leftSize, FREED));
+
+			InsertNode(NEXT_BLKP(ptr));
 		}
 		// CASE 2 : Free block
 		else if(GET_ALLOC(HDRP(nextBlock)) == FREED)
 		{
-			// 
+			void* oldPtr = ptr;
+
+			Coalesce(ptr);
+
+			size_t coalescedSize = GET_SIZE(HDRP(ptr));
+			// If coalesced size is big enough,
+			if (coalescedSize >= size)
+			{
+				deleteNode(ptr);
+
+
+				PUT(HDRP(ptr), PACK(size, ALLOCATED));
+				PUT(FTRP(ptr), PACK(size, ALLOCATED));
+
+				// ★
+				size_t remainSize = coalescedSize - size;
+
+				// If remaining size is big enough to store data,
+				if (remainSize >= 2 * DSIZE)
+				{
+					PUT(HDRP(NEXT_BLKP(ptr)), PACK(remainSize, FREED));
+					PUT(FTRP(NEXT_BLKP(ptr)), PACK(remainSize, FREED));
+
+					InsertNode(NEXT_BLKP(ptr));
+				}
+
+				// If coalesced ptr is different with origin pointer,
+				if (oldPtr != ptr)
+				{
+					// Move original data into coalesced pointer
+					memcpy(ptr, oldPtr, GET_SIZE(HDRP(oldPtr)));
+				}
+			}
+			// else, we should call mm_malloc();
+			// Notice that the address of the new block might be the same as the old block.
+			else
+			{
+				void* ptr = mm_malloc(size);
+				memcpy(ptr, oldPtr, GET_SIZE(HDRP(oldPtr)));
+			}
 		}
 		// CASE 3 : Allocated block
 		else if(GET_ALLOC(HDRP(nextBlock)) == ALLOCATED)
 		{
-			// 
+			ptr = mm_malloc(size);
+			memcpy(ptr, oldPtr, GET_SIZE(HDRP(oldPtr)));
+			mm_free(ptr);
 		}
 	}
 	// size <= size of ptr
-
-
-///////////////////////////////////////////////////////////////////
-    void *oldptr = ptr;
-    void *newptr;
-    size_t copySize;
-    
-    newptr = mm_malloc(size);
-    if (newptr == NULL)
-      return NULL;
-    copySize = *(size_t *)((char *)oldptr - SIZE_T_SIZE);
-    if (size < copySize)
-      copySize = size;
-    memcpy(newptr, oldptr, copySize);
-    mm_free(oldptr);
-    return newptr;
-
-    ///////////////////////////////////////////////////////////////////
-
-    /* If size is 0, ignore it */
-
-    /* Align block size */
-    /* ???????????????? */
-
-    /* Add overhead requirements to block size */
-    /* ??????????????????????????????????????? */
-
-    /* Calculate block buffer */
-    /* ?????????????????????? */
 }
