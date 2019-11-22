@@ -96,7 +96,7 @@ namespace CS200
 		{
 			// Compute shortest distance of circle center from AABB boundary
 			
-			if (ShortestDistanceSqr(circle.GetCenter(rect.GetTopLeft() - rect.Get), /**/)<= circle.GetRadius())
+			if (ShortestDistanceSqr(circle.GetCenter(rect.GetTopLeft() - rect.GetMax()), /**/)<= circle.GetRadius())
 			{
 				
 			}
