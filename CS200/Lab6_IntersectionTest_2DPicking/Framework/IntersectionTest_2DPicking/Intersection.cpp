@@ -10,7 +10,7 @@ namespace Helper
 {
 	float MagnitudeSquared(const Vector& p)
 	{
-		return (pow(p.x, 2) + pow(p.y, 2));
+		return static_cast<float>((pow(p.x, 2) + pow(p.y, 2)));
 	}
 }
 
@@ -20,8 +20,8 @@ namespace CS200
 	//2D picking
 	bool PointVSAABB(const Point& p, const Rectangle& rect)
 	{
-		Point max = rect.GetMax();
-		Point min = rect.GetMin();
+		const Point max = rect.GetMax();
+		const Point min = rect.GetMin();
 		return (p.x >= min.x) &&
 			(p.x <= max.x) &&
 			(p.y >= min.y) &&
@@ -38,17 +38,17 @@ namespace CS200
 	//Intersection
 	bool CircleVSCircle(const Circle& circle1, const Circle& circle2)
 	{
-		int sumRadius = circle1.GetRadius() + circle2.GetRadius();
-		Vector distance = circle1.GetCenter() - circle2.GetCenter();
+		const int sumRadius = circle1.GetRadius() + circle2.GetRadius();
+		const Vector distance = circle1.GetCenter() - circle2.GetCenter();
 		return Helper::MagnitudeSquared(sumRadius) >= Helper::MagnitudeSquared(distance);
 	}
 
 	bool AABBVSAABB(const Rectangle& rect1, const Rectangle& rect2)
 	{
-		Point rect1Min = rect1.GetMin();
-		Point rect2Min = rect2.GetMin();
-		Point rect1Max = rect1.GetMax();
-		Point rect2Max= rect2.GetMax();
+		const Point rect1Min = rect1.GetMin();
+		const Point rect2Min = rect2.GetMin();
+		const Point rect1Max = rect1.GetMax();
+		const Point rect2Max= rect2.GetMax();
 		return !(
 			(rect1Max.x < rect2Min.x) ||
 			(rect2Max.x < rect1Min.x) ||
@@ -61,23 +61,23 @@ namespace CS200
 	float ShortestDistanceSqr(const Point& p, const Edge& edge)
 	{
 		// CASE 1
-		Vector RP{p - edge.start};					/* R - P */
-		Vector QP{ edge.end - edge.start };	/* Q - P */
-		if (Vector::dot(RP, QP) < 0)
+		const Vector targetPointVector{p - edge.start};					/* R - P */
+		const Vector lineVector{ edge.end - edge.start };					/* Q - P */
+		if (Vector::dot(targetPointVector, lineVector) < 0)
 		{
-			return Helper::MagnitudeSquared(RP);
+			return targetPointVector.Length();
 		}
 		// CASE 2
-		else if (Vector::dot(RP, QP) > Vector::dot(QP, QP))
+		else if (Vector::dot(targetPointVector, lineVector) > Vector::dot(lineVector, lineVector))
 		{
-			Vector RQ{ p - edge.end };
-			return Helper::MagnitudeSquared(RP);
+			const Vector targetPointWithEndVector{ p - edge.end };	/* R - Q */
+			return targetPointWithEndVector.Length();
 		}
 		// CASE 3
-		else if(float sp = Vector::dot(RP, QP); 
-			0 <= sp && sp <= Helper::MagnitudeSquared(QP))
+		else if(const float measure = Vector::dot(targetPointVector, lineVector); 
+			0 <= measure && measure <= Helper::MagnitudeSquared(lineVector))
 		{
-			return sp;
+			return sqrt(Helper::MagnitudeSquared(targetPointVector) - (sqrt(Vector::dot(targetPointVector, lineVector))/Helper::MagnitudeSquared(lineVector)));
 		}
 		else
 		{
@@ -94,11 +94,23 @@ namespace CS200
 		}
 		else
 		{
+			float floatRadius = static_cast<float>(circle.GetRadius());
 			// Compute shortest distance of circle center from AABB boundary
-			
-			if (ShortestDistanceSqr(circle.GetCenter(rect.GetTopLeft() - rect.GetMax()), /**/)<= circle.GetRadius())
+			if (ShortestDistanceSqr(circle.GetCenter(), Edge(rect.GetTopLeft(), rect.GetMax())) <= floatRadius)
 			{
-				
+				return true;
+			}
+			if (ShortestDistanceSqr(circle.GetCenter(), Edge(rect.GetTopLeft(), rect.GetMin())) <= floatRadius)
+			{
+				return true;
+			}
+			if (ShortestDistanceSqr(circle.GetCenter(), Edge(rect.GetBottomRight(), rect.GetMax())) <= floatRadius)
+			{
+				return true;
+			}
+			if (ShortestDistanceSqr(circle.GetCenter(), Edge(rect.GetBottomRight(), rect.GetMin())) <= floatRadius)
+			{
+				return true;
 			}
 		}	
 		return false;
