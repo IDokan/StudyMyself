@@ -8,4 +8,4 @@
 #define BETTERGRADE 10007
 #define GAMEPROJECT 10008
 #define TRANSLATION 10009
-#define HEX 1000a
+#define HEX 1000A

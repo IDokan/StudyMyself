@@ -45,8 +45,16 @@ void ConvertLine(char const* filePath, const std::map<std::string, unsigned long
         std::string stringId = textLine.substr(0, delimiter);
         std::string displayText = textLine.substr(delimiter+1);
         
-        // store in result map
-        resultMap.emplace(map.at(stringId), displayText);
+        try
+        {
+            // store in result map
+            resultMap.emplace(map.at(stringId), displayText);
+        }
+        // If map::at() throw exception,
+        catch(const std::exception& e)
+        {
+            // Do nothing.
+        }
     }
 
     // After update result map, output result (Make file in here)
@@ -58,13 +66,13 @@ void ConvertLine(char const* filePath, const std::map<std::string, unsigned long
         if (tmp == end(resultMap))
         {
             // result would be "stringIdNumber \t stringIdText"
-            datFile << std::hex << it.second << '\t' << it.first << std::endl;
+            datFile << std::hex << std::uppercase << it.second << '\t' << it.first << std::endl;
         }
         // If success,
         else
         {
             // result would be "stringIdNumber \t displayText"
-            datFile << std::hex << it.second << '\t' << tmp->second << std::endl;
+            datFile << std::hex << std::uppercase << it.second << '\t' << tmp->second << std::endl;
         }
     }
     
@@ -118,13 +126,8 @@ int main(int argc, char const *argv[])
         // Update map
         stringIds.insert(make_pair(stringId, stringIdNumber));
 
-        datFile << std::hex <<  stringIdNumber << '\t' << displayText << std::endl;
-        stringsDefineFile << std::hex << "#define " << stringId << " " << stringIdNumber++ << std::endl;
-    }
-
-    for (const auto& it : stringIds)
-    {
-        std::cout << it.first << '\t' << it.second << std::endl;
+        datFile << std::hex << std::uppercase <<  stringIdNumber << '\t' << displayText << std::endl;
+        stringsDefineFile << std::hex << std::uppercase << "#define " << stringId << " " << stringIdNumber++ << std::endl;
     }
     
 
