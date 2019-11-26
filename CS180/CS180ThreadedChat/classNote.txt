@@ -1,0 +1,110 @@
+byte1 num value - Type of message
+int length = *(int*)(byte + 1)
+enum Types{
+	Chat,
+	DEBUG,
+	Ping,
+	ClientType,
+}
+
+
+TCP - SOCK_STREAM
+
+// proc1
+send ( { "Hello" } )
+send ( { "Everyone" } )
+send ( { "=)" } )
+
+// proc2
+buffer = []
+recv(buffer)		/* The function that get a string sent by send function */
+buffer = ["HelloEveryone=)"] /* Even though proc1 call three times of send, recv read what filled in buffer */
+
+// Rudy's tip!
+We should figure out start and end point of each message. 
+
+// proc1
+send({aaaaaaaaaaaaaa ... /* ridiculiusly long message */ aaaa})
+
+// 
+There is no guarantee that send can send all data at one time, if it is big -> part of big.
+It make you know how many bits are sent
+
+Assume length is 5452
+int bytes_sent = ..
+
+bytes_sent == 1024
+
+// , which means we should get all sent message with multiple call of send()
+
+ptr += 1024
+bytes_sent = send(ptr, 5452-1024)
+
+// do it again
+
+ptr += 1024
+bytes_sent = send(ptr, 5252-1024-1024)
+
+// Repeat it again again until get all message
+
+// proc2
+
+recv 1
+"[Big long str"
+recv 2
+"ing][more data here"
+recv 3
+"]"
+-----------------
+"[Big long string][more data here]"
+
+state = begin
+while(message is incomplete)
+{
+	bytes_rev = recv(message)
+	// State tracking
+	switch(read(message)){
+	case done:
+	case incomplete:
+	{
+		identify how much left?
+		OR
+		specify special character(end char)
+	}
+	case keep reading:
+	case end:
+	}
+
+}
+
+
+
+
+
+
+
+
+Message obj // only string
+
+vector<Message> recieve_messages(socket);
+
+vector<Message> messages = {Message{"Hello"}, Message{"All"}, Message{"=)"}};
+void send_messages(socket,  messages);
+
+
+
+Test#1
+	Try to send long message as long as you can until limitation
+Test#2
+	Try to send short message as short and lot, verify it works
+
+
+Help
+std::lock_guard<std::mutex>	-> That's the only thing for our assignment
+std::condition_variable
+std::atomic<bool> -> useful for assignment
+multithreaded variable ...
+
+makes syncronization of simple data type
+able to compile, generate assembly but only works simple type
+faster than mutex

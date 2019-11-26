@@ -1,0 +1,12 @@
+HI	Hola
+FAVORITE	CS225 es mi favorito
+LEARNING	Aprender sobre STL es genial
+ENGLISH	Si quiero estudiar en los Estados Unidos, debería trabajar en mi inglés
+INTERESTING	Esto es interesante
+FAVORITE	CS225 es mi favorito
+LEARNING	Aprender sobre STL es genial
+ENGLISH	Si quiero estudiar en los Estados Unidos, debería trabajar en mi inglés
+BETTERGRADE	Tal vez podría obtener una mejor calificación en mi examen si realmente escuchara en clase
+HEX	Esta cadena está aquí porque la ID de la cadena debe ser hexadecimal
+THANKYOU	Gracias
+BYE	Adiós

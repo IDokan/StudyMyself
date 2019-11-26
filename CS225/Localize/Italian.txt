@@ -1,0 +1,9 @@
+HI	Ciao
+BYE	Arrivederci
+THANKYOU	Grazie
+FAVORITE	CS225 è il mio preferito.
+ENGLISH	Se voglio andare a studiare negli Stati Uniti, dovrei lavorare sul mio inglese
+EXTRA Questa è una stringa in più che non dovrebbe essere lì
+GAMEPROJECT	Questa lezione potrebbe essere interessante per il nostro progetto di gioco
+TRANSLATION	Immagino che questi non vengano tradotti bene
+HEX	Questa stringa è qui perché l'ID stringa deve essere esadecimale

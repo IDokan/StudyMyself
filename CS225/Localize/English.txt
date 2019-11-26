@@ -1,0 +1,11 @@
+HI	Hello
+BYE	Bye
+THANKYOU	Thank you
+INTERESTING	This is interesting
+FAVORITE	CS225 is my favorite
+LEARNING	Learning about STL is great
+ENGLISH	If I want to go to study in the US, I should work on my English
+BETTERGRADE	Maybe I could get a better grade on my test if I actually listened in class
+GAMEPROJECT	This lesson could be cool for our game project
+TRANSLATION	I am guessing these are not being translated well
+HEX	This string is here because the string ID should be hex

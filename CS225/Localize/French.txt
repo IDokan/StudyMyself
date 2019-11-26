@@ -1,0 +1,11 @@
+HI	Salut
+BYE	au revoir
+THANKYOU	Mercie
+INTERESTING	C'est intéressant
+FAVORITE	CS225 est mon prefere
+LEARNING	En savoir plus sur le STL, c'est génial
+ENGLISH	Si je veux étudier aux États-Unis, je devrais travailler mon anglais
+BETTERGRADE	Peut-être que je pourrais obtenir une meilleure note à mon examen si j'écoutais réellement en classe
+GAMEPROJECT	Cette leçon pourrait être cool pour notre projet de jeu
+TRANSLATION	Je suppose que ceux-ci ne sont pas bien traduits
+HEX	Cette chaîne est ici car l'ID de chaîne doit être hex
