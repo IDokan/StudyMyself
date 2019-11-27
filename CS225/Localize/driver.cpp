@@ -2,7 +2,9 @@
 #include <fstream>
 #include <map>
 #include <string>
+#ifdef _MSC_VER
 #include <windows.h>
+#endif
 
 #include "LocalizeText.h"
 #include "Strings.h"

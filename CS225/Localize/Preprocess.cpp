@@ -17,53 +17,42 @@ Creation date: 11/26/2019
 
 #define FAIL_TO_OPEN false
 #define INIT_STRING_ID_NUMBER 0x10000
-typedef  std::string STRING_ID_TEXT;
-typedef unsigned long STRING_ID_NUMBER;
-typedef std::string DISPLAY_STRING;
 
 /* Helper function declarations */
 
-void ConvertLine(char const * filePath, const std::map<STRING_ID_TEXT, STRING_ID_NUMBER>& map, STRING_ID_NUMBER maximumStringId);
+void ConvertLine(char const * filePath, const std::map<unsigned long, std::string>& map);
 std::string ParseFileName(std::string filePath);
-void MakeDatFile(std::ofstream& outStream, const std::map<STRING_ID_TEXT, STRING_ID_NUMBER>& map, const std::map<STRING_ID_NUMBER, DISPLAY_STRING>& resultMap, STRING_ID_NUMBER maximumStringId);
+void MakeDatFile(std::ofstream& outStream, const std::map<unsigned long, std::string>& stringIdMap, const std::map<std::string, std::string>& idDisplayMap);
 
 /* End of declarations */
 
-void MakeDatFile(std::ofstream& outStream, const std::map<STRING_ID_TEXT, STRING_ID_NUMBER>& map, const std::map<STRING_ID_NUMBER, DISPLAY_STRING>& resultMap, STRING_ID_NUMBER maximumStringId)
+void MakeDatFile(std::ofstream& outStream, const std::map<unsigned long, std::string>& stringIdMap, const std::map<std::string, std::string>& idDisplayMap)
 {
-    for (STRING_ID_NUMBER i = INIT_STRING_ID_NUMBER; i < maximumStringId; i++)
+    for (const auto& stringIdIterator : stringIdMap)
     {
-        /* code */
-    }
-    
-    
-
-    // Order is incorrect
-    for (const auto& it : map)
-    {
-        const auto& tmp = resultMap.find(it.second);
+        const auto& displayResult = idDisplayMap.find(stringIdIterator.second);
         
         // If fail to find,
-        if (tmp == end(resultMap))
+        if (displayResult == end(idDisplayMap))
         {
             // result would be "stringIdNumber \t stringIdText"
-            outStream << std::hex << std::uppercase << it.second << '\t' << it.first << std::endl;
+            outStream << std::hex << std::uppercase << stringIdIterator.first << '\t' << stringIdIterator.second << std::endl;
         }
         // If success,
         else
         {
             // result would be "stringIdNumber \t displayText"
-            outStream << std::hex << std::uppercase << it.second << '\t' << tmp->second << std::endl;
+            outStream << std::hex << std::uppercase << stringIdIterator.first << '\t' << displayResult->second << std::endl;
         }
     }
 }
 
-void ConvertLine(char const* filePath, const std::map<STRING_ID_TEXT, STRING_ID_NUMBER>& map, STRING_ID_NUMBER maximumStringId)
+void ConvertLine(char const* filePath, const std::map<unsigned long, std::string>& map)
 {
     std::ifstream txtFile(filePath);
 
     // Result Map STL that takes 
-    std::map<STRING_ID_NUMBER, DISPLAY_STRING> resultMap;
+    std::map<std::string, std::string> numberTextMap;
 
     // Error check
     if (txtFile.is_open() == FAIL_TO_OPEN)
@@ -77,19 +66,11 @@ void ConvertLine(char const* filePath, const std::map<STRING_ID_TEXT, STRING_ID_
     {
         // Find delimiter and divide a line with it.
         int delimiter = textLine.find('\t');
-        STRING_ID_TEXT stringId = textLine.substr(0, delimiter);
-        DISPLAY_STRING displayText = textLine.substr(delimiter+1);
+        std::string stringIdText = textLine.substr(0, delimiter);
+        std::string displayText = textLine.substr(delimiter+1);
         
-        try
-        {
-            // store in result map
-            resultMap.emplace(map.at(stringId), displayText);
-        }
-        // If map::at() throw exception,
-        catch(const std::exception& e)
-        {
-            // Do nothing.
-        }
+        // store in result map
+        numberTextMap.emplace(stringIdText, displayText);
     }
 
 
@@ -97,7 +78,7 @@ void ConvertLine(char const* filePath, const std::map<STRING_ID_TEXT, STRING_ID_
     std::ofstream datFile(ParseFileName(filePath) + ".dat");
     if(datFile.is_open() == true)
     {
-        MakeDatFile(datFile, map, resultMap, maximumStringId);
+        MakeDatFile(datFile, map, numberTextMap);
     }
 }
 
@@ -107,21 +88,12 @@ std::string ParseFileName(std::string filePath)
     return filePath.substr(0, fileNamePos);
 }
 
-int main(int argc, char const *argv[])
+void FillIdMap(std::map<unsigned long, std::string>& stringIdMap, std::string filePath)
 {
-    if (argc < 2)
-    {
-        printf("Usage : <%s> <txt file name> <Extra Files>\n", argv[0]);
-        return 0;
-    }
-
-    std::string filePath = argv[1];
-
-    // Open text file with given file path & Open dat file
     std::ifstream txtFile(filePath);
     std::ofstream datFile(ParseFileName(filePath) + ".dat");
 
-    std::ofstream stringsDefineFile("String.h");
+    std::ofstream stringsDefineFile("Strings.h");
 
     // Error check if they are not opened
     if (
@@ -133,33 +105,49 @@ int main(int argc, char const *argv[])
         std::cout << "Unable to open the file : " << filePath << std::endl;
     }
 
-    std::map<STRING_ID_TEXT, STRING_ID_NUMBER> stringIds;
-
-    STRING_ID_NUMBER stringIdNumber = INIT_STRING_ID_NUMBER;
+    unsigned long stringIdNumber = INIT_STRING_ID_NUMBER;
     // tmporary variable for take each line
     std::string textLine;
     while (getline(txtFile, textLine))
     {
         // Find delimiter and divide a line with it.
         int delimiter = textLine.find('\t');
-        std::string stringId = textLine.substr(0, delimiter);
+        std::string stringIdText = textLine.substr(0, delimiter);
         std::string displayText = textLine.substr(delimiter+1);
     
         // Update map
-        stringIds.insert(make_pair(stringId, stringIdNumber));
+        stringIdMap.insert(make_pair(stringIdNumber, stringIdText));
 
         datFile << std::hex << std::uppercase <<  stringIdNumber << '\t' << displayText << std::endl;
-        stringsDefineFile << std::hex << std::uppercase << "#define " << stringId << " " << stringIdNumber << std::endl;
+        stringsDefineFile << std::hex << std::uppercase << "#define " << stringIdText << " 0x" << stringIdNumber << std::endl;
 
         // Update stringIdNumber
         ++stringIdNumber;
     }
-    
+}
 
-    while (argc > 2)
+int main(int argc, char const *argv[])
+{
+    int argumentCount = 6;
+    const char * argumentValues[] = 
     {
-        ConvertLine(argv[argc - 1], stringIds, stringIdNumber - 1);
-        --argc;
+        argv[0],
+        "English.txt",
+        "French.txt",
+        "Italian.txt",
+        "Spanish.txt",
+        "Korean.txt",
+    };
+
+    // Open text file with given file path & Open dat file
+    std::map<unsigned long, std::string> stringIds;
+    std::string filePath = argumentValues[1];
+    FillIdMap(stringIds, filePath);
+    
+    // Covert extra files into .dat file
+    while (argumentCount > 2)
+    {
+        ConvertLine(argumentValues[--argumentCount], stringIds);
     }
     
     

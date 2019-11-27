@@ -9,3 +9,31 @@ Author: Sinil Kang
 Creation date: 11/26/2019
 - End Header ----------------------------------------------------------------
 */ 
+#include <fstream>
+#include <string>
+#include "LocalizeText.h"
+
+LocalizedText::LocalizedText(std::string dataFile)
+: idDisplayMap()
+{
+    std::ifstream dataStream(dataFile);
+    
+
+    std::string inputLine;
+    while (std::getline(dataStream, inputLine))
+    {
+        // Get a position of delimiter
+        long long unsigned int delimiter = inputLine.find(DELIMITER);
+        // Parse the line
+        long stringId = strtol(inputLine.substr(0, delimiter).c_str(), nullptr, HEXADECIMAL);
+        std::string displayText = inputLine.substr(delimiter+1);
+
+        // Save in map
+        idDisplayMap.emplace(stringId, displayText);
+    }
+}
+
+std::string LocalizedText::ToString(long string_id_number)
+{
+    return idDisplayMap.find(string_id_number)->second;
+}

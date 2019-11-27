@@ -11,12 +11,18 @@ Creation date: 11/26/2019
 */ 
 #pragma once
 #include <string>
+#include <map>
 
 class LocalizedText
 {
+private:
+    #define HEXADECIMAL 16
+    #define DELIMITER '\t'
 public:
-    LocalizedText();
     explicit LocalizedText(std::string dataFile);
 
-    std::string ToString(unsigned long string_id_number);
+    std::string ToString(long string_id_number);
+
+private:
+    std::map<long, std::string> idDisplayMap;
 };
