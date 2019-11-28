@@ -20,9 +20,10 @@ Creation date: 11/26/2019
 
 /* Helper function declarations */
 
-void ConvertLine(char const * filePath, const std::map<unsigned long, std::string>& map);
+void ConvertFiles(char const * filePath, const std::map<unsigned long, std::string>& map);
 std::string ParseFileName(std::string filePath);
 void MakeDatFile(std::ofstream& outStream, const std::map<unsigned long, std::string>& stringIdMap, const std::map<std::string, std::string>& idDisplayMap);
+void FillIdMap(std::map<unsigned long, std::string>& stringIdMap, std::string filePath);
 
 /* End of declarations */
 
@@ -47,7 +48,7 @@ void MakeDatFile(std::ofstream& outStream, const std::map<unsigned long, std::st
     }
 }
 
-void ConvertLine(char const* filePath, const std::map<unsigned long, std::string>& map)
+void ConvertFiles(char const* filePath, const std::map<unsigned long, std::string>& map)
 {
     std::ifstream txtFile(filePath);
 
@@ -118,7 +119,9 @@ void FillIdMap(std::map<unsigned long, std::string>& stringIdMap, std::string fi
         // Update map
         stringIdMap.insert(make_pair(stringIdNumber, stringIdText));
 
+        // result in datFile would be "stringIdNumber \t displayText\n"
         datFile << std::hex << std::uppercase <<  stringIdNumber << '\t' << displayText << std::endl;
+        // result in Strings.h would be "#define stringIdText 0xstringIdNumber\n"
         stringsDefineFile << std::hex << std::uppercase << "#define " << stringIdText << " 0x" << stringIdNumber << std::endl;
 
         // Update stringIdNumber
@@ -147,7 +150,7 @@ int main(int argc, char const *argv[])
     // Covert extra files into .dat file
     while (argumentCount > 2)
     {
-        ConvertLine(argumentValues[--argumentCount], stringIds);
+        ConvertFiles(argumentValues[--argumentCount], stringIds);
     }
     
     

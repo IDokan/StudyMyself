@@ -18,6 +18,10 @@ LocalizedText::LocalizedText(std::string dataFile)
 {
     std::ifstream dataStream(dataFile);
     
+    if (dataStream.is_open() == false)
+    {
+    	return;
+    }
 
     std::string inputLine;
     while (std::getline(dataStream, inputLine))
@@ -35,5 +39,5 @@ LocalizedText::LocalizedText(std::string dataFile)
 
 std::string LocalizedText::ToString(long string_id_number)
 {
-    return idDisplayMap.find(string_id_number)->second;
+    return idDisplayMap[string_id_number];
 }
