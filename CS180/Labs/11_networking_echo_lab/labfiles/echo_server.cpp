@@ -32,6 +32,7 @@ int main(int argc, char const* argv[])
     bool                should_run                  = true;
     while (should_run)
     {
+        std::cout << "testing\n";
         sockaddr_storage client_address = {};
         // Call accept() to wait for connection request and to get a new connection socket to communicate with
         // https://pubs.opengroup.org/onlinepubs/7908799/xns/accept.html
@@ -40,6 +41,7 @@ int main(int argc, char const* argv[])
 
         if (new_client_data_socket == sockets::BAD_SOCKET)
         {
+            std::cout << "It is bad socket\n";
             // this connection failed to happen, so let's wait for a new one
             continue;
         }
