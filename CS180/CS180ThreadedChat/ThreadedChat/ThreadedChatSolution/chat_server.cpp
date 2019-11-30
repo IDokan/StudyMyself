@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
 		{
 			bytes_received = recv(new_client_data_socket, &identifyingBuffer.front(), bufferSize, 0);
 		}
-		// TODO: Check it is work
+		// TODO: Check it is work , done!
 		while (bytes_received <= 0);
 		if (identifyingBuffer.at(0) == WRITER)
 		{
