@@ -81,4 +81,6 @@ namespace SocketLib
      * \param socket_handle should be a currently active socket
      */
      void CloseSocket(sock sockHandle);
+
+	 void PrintConnectingInfo(sockaddr_storage client_address, socklen_t socket_address_storage_size);
 }

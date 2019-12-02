@@ -10,6 +10,7 @@
 // Author:    Rudy Castan <rudy.castan@digipen.edu>
 // Creation date: 2018/11/08
 
+#include <array>
 #include <iostream>
 #include "SocketLib.h"
 
@@ -183,6 +184,20 @@ namespace SocketLib
 #endif
 	}
 
+
+
+	void PrintConnectingInfo(sockaddr_storage client_address, socklen_t socket_address_storage_size)
+	{
+		constexpr int NameBufferLength = 512;
+		std::array<char, NameBufferLength> client_hostname{};
+		std::array<char, NameBufferLength> client_port{};
+		const auto psocketaddress_information = reinterpret_cast<sockaddr*>(&client_address);
+		// Call getnameinfo() to get a string version of the clients (IP:Port) information
+		getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), NameBufferLength, &client_port.front(), NameBufferLength, NI_NUMERICHOST);
+		std::cout << "Connected to (" << client_hostname.data() << ", " << client_port.data() << ") / ";
+		getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), NameBufferLength, &client_port.front(), NameBufferLength, NI_NUMERICSERV);
+		std::cout << '(' << client_hostname.data() << ", " << client_port.data() << ")\n\n";
+	}
 }
 
 

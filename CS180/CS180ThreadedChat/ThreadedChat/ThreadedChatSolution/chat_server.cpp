@@ -14,6 +14,7 @@
 #include <vector>
 #include <array>
 #include "SocketLib.h"
+#include <thread>
 
 struct Message
 {
@@ -39,8 +40,7 @@ namespace
 
 
 /* Helper functions */
-void PrintConnectingInfo(sockaddr_storage client_address, socklen_t socket_address_storage_size);
-void DoWriterThing();
+void DoWriterThing(const SocketLib::sock client_socket);
 void DoBrowserThing();
 /* End of Helpers */
 int main(int argc, char* argv[])
@@ -75,20 +75,22 @@ int main(int argc, char* argv[])
 		}
 
 		// Print connection information
-		PrintConnectingInfo(client_address, socket_address_storage_size);
+		SocketLib::PrintConnectingInfo(client_address, socket_address_storage_size);
 		
-		// TODO: identify if it is a writer or browser client.
+		// identify if it is a writer or browser client.
 		std::array<char, bufferSize> identifyingBuffer{};
 		long long bytes_received;
 		do
 		{
 			bytes_received = recv(new_client_data_socket, &identifyingBuffer.front(), bufferSize, 0);
 		}
-		// TODO: Check it is work , done!
 		while (bytes_received <= 0);
+		
 		if (identifyingBuffer.at(0) == WRITER)
 		{
-			DoWriterThing();
+			// Start thread!
+			std::thread writerThread{ DoWriterThing, new_client_data_socket };
+			writerThread.detach();
 		}
 		else if (identifyingBuffer.at(0) == BROWSER)
 		{
@@ -100,22 +102,7 @@ int main(int argc, char* argv[])
 	}
 }
 
-
-// TODO: They will be printed all in each platform
-void PrintConnectingInfo(sockaddr_storage client_address, socklen_t socket_address_storage_size)
-{
-	constexpr int NameBufferLength = 512;
-	std::array<char, NameBufferLength> client_hostname{};
-	std::array<char, NameBufferLength> client_port{};
-	const auto psocketaddress_information = reinterpret_cast<sockaddr*>(&client_address);
-	// Call getnameinfo() to get a string version of the clients (IP:Port) information
-	getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), NameBufferLength, &client_port.front(), NameBufferLength, NI_NUMERICHOST);
-	std::cout << "Connected to (" << client_hostname.data() << ", " << client_port.data() << ") / ";
-	getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), NameBufferLength, &client_port.front(), NameBufferLength, NI_NUMERICSERV);
-	std::cout << '(' << client_hostname.data() << ", " << client_port.data() << ")\n\n";
-}
-
-void DoWriterThing()
+void DoWriterThing(const SocketLib::sock client_socket)
 {
 	// It should create a thread for each writer client, so that it is constantly receiving messages.
 	// Does it mean writer -> Peer Thread, browser -> Main Thread
@@ -131,10 +118,22 @@ void DoWriterThing()
 	 *
 	 * TODO: Messages should be prepended with the source writer clients name.
 	 */
-
+	std::array<char, bufferSize> receive_buffer{};
+	
 	while (true)
 	{
-		std::cout << "Writer connected!\n";
+		// Get a string from client
+		const auto bytes_received = recv(client_socket, &receive_buffer.front(), bufferSize, 0);
+
+		// if invalid, skip this iteration
+		if (bytes_received <= 0)
+		{
+			continue;
+		}
+
+		// TODO: DEBUG Prepend string
+		receive_buffer[bytes_received] = '\0';
+		std::cout << receive_buffer.data() << std::endl;
 	}
 }
 

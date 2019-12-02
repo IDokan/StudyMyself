@@ -47,11 +47,11 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
+	// '0' means I am writer
 	const std::string identifierBuffer = "0";
 	const int identifySent = send(client_socket, identifierBuffer.c_str(), identifierBuffer.length(), 0);
-	std::cout << "identify sent : " << identifySent << std::endl;
+
 	// TODO: Print Connecting Information Here
-	std::cout << "Connecting?\n";
 	
 	std::string input_line;
 	while (true)
@@ -82,18 +82,4 @@ int main(int argc, char* argv[])
 
 	SocketLib::CloseSocket(client_socket);
 	return 1;
-}
-
-
-void PrintConnectingInfo(sockaddr_storage client_address, socklen_t socket_address_storage_size)
-{
-	constexpr int NameBufferLength = 512;
-	std::array<char, NameBufferLength> client_hostname{};
-	std::array<char, NameBufferLength> client_port{};
-	const auto psocketaddress_information = reinterpret_cast<sockaddr*>(&client_address);
-	// Call getnameinfo() to get a string version of the clients (IP:Port) information
-	getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), NameBufferLength, &client_port.front(), NameBufferLength, NI_NUMERICHOST);
-	std::cout << "Connected to (" << client_hostname.data() << ", " << client_port.data() << ") / ";
-	getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), NameBufferLength, &client_port.front(), NameBufferLength, NI_NUMERICSERV);
-	std::cout << '(' << client_hostname.data() << ", " << client_port.data() << ")\n\n";
 }
