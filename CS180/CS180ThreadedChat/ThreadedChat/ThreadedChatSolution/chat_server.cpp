@@ -32,19 +32,19 @@ namespace
 	/* TODO: Make sure these things. Currently, Not Sure all of it */
 	// The chat server must keep track of all connected writer clients names.
 	// I guess it will be used for display Writers: <Who>, <Who>
-	static struct nickname_data
+	namespace NicknameData
 	{
 		std::vector<std::string> connected_writers_nickname;
 		std::mutex mtx;
 	};
 	// It should store a set of browser clients separately.
-	static struct broswer_data
+	namespace BroswerData
 	{
 		std::vector<SocketLib::sock> connected_browsers;
 		std::mutex mtx;
 	};
 	// It should maintain a history of all messages received from the writer clients.
-static struct message_data
+namespace MessageData
 {
 	std::vector<Message> history;
 	std::mutex mtx;
@@ -146,8 +146,8 @@ void DoWriterThing(const SocketLib::sock client_socket)
 	 * TODO: Messages should be prepended with the source writer clients name.
 	 */
 	 std::string nickname = GetInputWithBuffer(client_socket);
-	 {
-		 connected_writers_nickname.push_back(nickname);
+	 {std::scoped_lock lock(NicknameData::mtx);
+		 NicknameData::connected_writers_nickname.push_back(nickname);
 	 }
 
 	while (true)
@@ -163,7 +163,9 @@ void DoWriterThing(const SocketLib::sock client_socket)
 
 		// TODO: DEBUG Prepend string
 		receive_buffer[bytes_received] = '\0';
-		history.puch_back(Pack(nickname, std::string(receive_buffer.data())));
+		{ std::scoped_lock lock(MessageData::mtx);
+			history.puch_back(Pack(nickname, std::string(receive_buffer.data())));
+		}
 		std::cout << receive_buffer.data() << std::endl;
 	}
 }
