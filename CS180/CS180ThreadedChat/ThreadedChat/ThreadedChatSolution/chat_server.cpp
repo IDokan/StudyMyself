@@ -13,8 +13,9 @@
 #include <iostream>
 #include <vector>
 #include <array>
-#include "SocketLib.h"
 #include <thread>
+#include <mutex>
+#include "SocketLib.h"
 
 struct Message
 {
@@ -27,21 +28,46 @@ namespace
 	constexpr char WRITER = '0';
 	constexpr char BROWSER = '1';
 	constexpr int bufferSize = 512;
-	
+
 	/* TODO: Make sure these things. Currently, Not Sure all of it */
 	// The chat server must keep track of all connected writer clients names.
 	// I guess it will be used for display Writers: <Who>, <Who>
-	std::vector<std::string> connected_writers_nickname;
+	static struct nickname_data
+	{
+		std::vector<std::string> connected_writers_nickname;
+		std::mutex mtx;
+	};
 	// It should store a set of browser clients separately.
-	std::vector<SocketLib::sock> connected_browsers;
+	static struct broswer_data
+	{
+		std::vector<SocketLib::sock> connected_browsers;
+		std::mutex mtx;
+	};
 	// It should maintain a history of all messages received from the writer clients.
+static struct message_data
+{
 	std::vector<Message> history;
+	std::mutex mtx;
+};
 }
+// TODO: Static struc? or idividual variables
+/*		For example,
+
+	std::vector<std::string> connected_writers_nickname;
+	std::mutex nickname_mutex;
+
+	...
+
+	std::vector<Message> history;
+	std::mutex history_mutex;
+*/
 
 
 /* Helper functions */
 void DoWriterThing(const SocketLib::sock client_socket);
 void DoBrowserThing();
+std::string GetInputWithBuffer(const SocketLib::sock socket);
+Message Pack(std::string nickname, std::string chatting);
 /* End of Helpers */
 int main(int argc, char* argv[])
 {
@@ -76,18 +102,19 @@ int main(int argc, char* argv[])
 
 		// Print connection information
 		SocketLib::PrintConnectingInfo(client_address, socket_address_storage_size);
-		
+
 		// identify if it is a writer or browser client.
-		std::array<char, bufferSize> identifyingBuffer{};
-		long long bytes_received;
-		do
-		{
-			bytes_received = recv(new_client_data_socket, &identifyingBuffer.front(), bufferSize, 0);
-		}
-		while (bytes_received <= 0);
-		
+		std::string identifier = GetInputWithBuffer(new_client_data_socket);
+
 		if (identifyingBuffer.at(0) == WRITER)
 		{
+			// Send the number of Browsers and Writers nickname
+			/*
+			Browsers: %d
+			 Writers:
+			*/
+			//TODO: Where get client's nickname?
+
 			// Start thread!
 			std::thread writerThread{ DoWriterThing, new_client_data_socket };
 			writerThread.detach();
@@ -118,8 +145,11 @@ void DoWriterThing(const SocketLib::sock client_socket)
 	 *
 	 * TODO: Messages should be prepended with the source writer clients name.
 	 */
-	std::array<char, bufferSize> receive_buffer{};
-	
+	 std::string nickname = GetInputWithBuffer(client_socket);
+	 {
+		 connected_writers_nickname.push_back(nickname);
+	 }
+
 	while (true)
 	{
 		// Get a string from client
@@ -133,6 +163,7 @@ void DoWriterThing(const SocketLib::sock client_socket)
 
 		// TODO: DEBUG Prepend string
 		receive_buffer[bytes_received] = '\0';
+		history.puch_back(Pack(nickname, std::string(receive_buffer.data())));
 		std::cout << receive_buffer.data() << std::endl;
 	}
 }
@@ -150,3 +181,17 @@ void DoBrowserThing()
 	 }
 }
 
+std::string GetInputWithBuffer(const SocketLib::sock socket)
+{
+	std::array<char, bufferSize> buffer;
+	long long bytes_received;
+	do
+	{
+		bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
+	}
+	while (bytes_received <= 0);
+
+	buffer[bytes_received] = '\0';
+
+	return std::string(buffer.data());
+}
