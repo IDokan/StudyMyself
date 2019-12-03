@@ -164,7 +164,7 @@ void DoWriterThing(const SocketLib::sock client_socket)
 	//std::cout << std::endl;
 	}
 	
-	SendChatroomProperty(client_socket);
+	// SendChatroomProperty(client_socket);
 	
 	while (true)
 	{

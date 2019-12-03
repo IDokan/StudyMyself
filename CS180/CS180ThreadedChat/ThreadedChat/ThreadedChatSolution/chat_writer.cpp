@@ -19,11 +19,11 @@
 int should_run = true;
 
 /* Helper functions */
-void Quit(int sig)
+/*void Quit(int sig)
 {
 	should_run = false;
 	//should I just exit(EXIT_SUCCESS) here?
-}
+}*/
 /* End of Helpers */
 
 // TODO: If nickname is missing, make a connecting & printing connection information first, after then get a nick name
@@ -35,8 +35,6 @@ int main(int argc, char* argv[])
 		std::cerr << "usage: " << argv[0] << " <server ip address> <port or service name> [nickname]\n";
 		return 1;
 	}
-	
-	signal(SIGINT, Quit);
 	
 	const char* const server_host = argv[1];
 	const char* const port = argv[2];
@@ -55,8 +53,6 @@ int main(int argc, char* argv[])
 	const std::string identifierBuffer = "0";
 	SocketLib::SendString(client_socket, identifierBuffer);
 
-	// TODO: Print Connecting Information Here
-
 	std::string nick_name;
 	if (argc == 4)
 	{
@@ -70,7 +66,7 @@ int main(int argc, char* argv[])
 	SocketLib::SendString(client_socket, nick_name);
 
 	std::cout << "DEBUG : Finish sending a nickname" << std::endl;
-	std::cout << "Browsers: ";
+	/*std::cout << "Browsers: ";
 
 	while (true)
 	{
@@ -102,6 +98,7 @@ int main(int argc, char* argv[])
 		std::cout << input << ' ';
 	}
 	std::cout << std::endl;
+	*/
 	
 	std::string input_line;
 	while (should_run)

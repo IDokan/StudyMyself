@@ -232,12 +232,14 @@ namespace SocketLib
 		std::array<char, bufferSize> buffer{};
 		static std::string data{};
 		std::string returnValue{};
+
 		while (returnValue.empty() == true)
 		{
-			if (const size_t bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
-				bytes_received > 0)
+			if (const long long bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
+				bytes_received >= 0)
 			{
-				for (size_t i = 0; i < bytes_received; ++i)
+
+				for (long long i = 0; i < bytes_received; ++i)
 				{
 					// Parse received data
 					switch (buffer.at(i))
@@ -249,6 +251,7 @@ namespace SocketLib
 						break;
 					case ']':
 						returnValue = data;
+						data.clear();
 						break;
 					default:
 						data.push_back(buffer.at(i));
@@ -270,6 +273,7 @@ namespace SocketLib
 		{
 			if (buffer.size() >= SEND_BUFFER_MAX)
 			{
+				// Going to send
 				if(const bool is_success = SocketLib::SEND(socket, buffer);
 					is_success == false)
 				{
@@ -279,6 +283,11 @@ namespace SocketLib
 			}
 			buffer.push_back(message.at(i));
 		}
+				if(const bool is_success = SocketLib::SEND(socket, buffer);
+					is_success == false)
+				{
+					return false;
+				}
 		return true;
 	}
 
@@ -286,7 +295,6 @@ namespace SocketLib
 	{
 		if (packed_msg.size() > SEND_BUFFER_MAX)
 		{
-			std::cout << "Packed message has invalid size\n";
 			return false;
 		}
 		const int bytes_sent = send(socket, packed_msg.c_str(), packed_msg.size(), 0);
