@@ -64,41 +64,14 @@ int main(int argc, char* argv[])
 		std::getline(std::cin, nick_name);
 	}
 	SocketLib::SendString(client_socket, nick_name);
-
-	std::cout << "DEBUG : Finish sending a nickname" << std::endl;
-	/*std::cout << "Browsers: ";
-
-	while (true)
-	{
-		std::string numOfBrowser = SocketLib::GetInputWithBuffer(client_socket);
-
-		if (numOfBrowser.at(0) == '&')
-		{
-			std::cout << "DEBUG : Finish Getting a numOfBrowser" << std::endl;
-			break;
-		}
-
-		std::cout << "DEBUG : Get a numOfBrowser" << std::endl;
-		std::cout << numOfBrowser << ' ';
-	}
-	std::cout << std::endl << ' ';
-	
-	while (true)
-	{
-		std::cout << "DEBUG : Start to get writers" << std::endl;
-		std::string input = SocketLib::GetInputWithBuffer(client_socket);
-
-		if (input.at(0) == '&')
-		{
-			std::cout << "DEBUG : Finish Getting a writer names" << std::endl;
-			break;
-		}
-
-		std::cout << "DEBUG : Get a writer name" << std::endl;
-		std::cout << input << ' ';
-	}
-	std::cout << std::endl;
-	*/
+	std::cout << "Try to get a browsers number\n";	// DEBUG
+	std::string browserNum = SocketLib::GetInputWithBuffer(client_socket);
+	std::cout << "Browsers: " << browserNum << std::endl;
+	std::cout << "Success to get a input and printed\n";	// DEBUG
+	std::cout << "Try to get a nicknames\n";	// DEBUG
+	std::string nicknames = SocketLib::GetInputWithBuffer(client_socket);
+	std::cout << " Writers: " << nicknames << std::endl;
+	std::cout << "Success to get a input and printed\n";	// DEBUG
 	
 	std::string input_line;
 	while (should_run)
@@ -110,9 +83,6 @@ int main(int argc, char* argv[])
 		{
 			break;
 		}
-
-		// send input string to server
-		// TODO: Prepend start and end delimiter
 
 		SocketLib::SendString(client_socket, input_line);
 

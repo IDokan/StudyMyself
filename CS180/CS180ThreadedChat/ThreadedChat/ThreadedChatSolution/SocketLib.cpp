@@ -266,14 +266,17 @@ namespace SocketLib
 
 	bool SendString(SocketLib::sock socket, std::string msg)
 	{
+		std::cout << "msg = " << msg << std::endl;	// DEBUG
 		std::string buffer{};
 		std::string message = '[' + msg + ']';
+		std::cout << "message = " << message << std::endl;	// DEBUG
 
 		for (size_t i = 0; i < message.size(); i++)
 		{
 			if (buffer.size() >= SEND_BUFFER_MAX)
 			{
 				// Going to send
+				std::cout << "send : buffer = " << buffer << std::endl;	// DEBUG
 				if(const bool is_success = SocketLib::SEND(socket, buffer);
 					is_success == false)
 				{
@@ -283,11 +286,14 @@ namespace SocketLib
 			}
 			buffer.push_back(message.at(i));
 		}
-				if(const bool is_success = SocketLib::SEND(socket, buffer);
-					is_success == false)
-				{
-					return false;
-				}
+
+				std::cout << "send : buffer = " << buffer << std::endl;	// DEBUG
+		if(const bool is_success = SocketLib::SEND(socket, buffer);
+			is_success == false)
+		{
+			return false;
+		}
+		
 		return true;
 	}
 

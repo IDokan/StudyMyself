@@ -13,11 +13,12 @@
 #include <iostream>
 #include <array>
 #include <string>
+#include <signal.h>
 #include "SocketLib.h"
 
 int should_run = true;
 
-void Quit(int sig)
+void Quit(int /*sig*/)
 {
 	should_run = false;
 	//should I just exit(EXIT_SUCCESS) here?
@@ -95,7 +96,7 @@ int main(int argc, char* argv[])
 			Maybe just receive from the server? Browser just receives it as the message I think,,
 		 ************************************************************************************************************/
 		
-		sockets::close_socket(browser_socket);
+		SocketLib::CloseSocket(browser_socket);
 		return 0;
 	}
 }
