@@ -16,18 +16,15 @@
 #include <string>
 #include "SocketLib.h"
 
-// TODO: If nickname is missing, make a connecting & printing connection information first, after then get a nick name
-
-
 /* Helper functions */
-void PrintConnectingInfo(sockaddr_storage client_address, socklen_t socket_address_storage_size);
+//void
 /* End of Helpers */
 
-
+// TODO: If nickname is missing, make a connecting & printing connection information first, after then get a nick name
 int main(int argc, char* argv[])
 {
 	// If input is incorrect,
-	if (argc != 4)
+	if (argc < 3 || argc > 4)
 	{
 		std::cerr << "usage: " << argv[0] << " <server ip address> <port or service name> [nickname]\n";
 		return 1;
@@ -35,7 +32,6 @@ int main(int argc, char* argv[])
 
 	const char* const server_host = argv[1];
 	const char* const port = argv[2];
-	const char* const nick_name = argv[3];
 
 	// Get client socket
 	const SocketLib::sock client_socket = SocketLib::OpenClientSocket(server_host, port);
@@ -49,9 +45,55 @@ int main(int argc, char* argv[])
 
 	// '0' means I am writer
 	const std::string identifierBuffer = "0";
-	const int identifySent = send(client_socket, identifierBuffer.c_str(), identifierBuffer.length(), 0);
+	SocketLib::SendString(client_socket, identifierBuffer);
 
 	// TODO: Print Connecting Information Here
+
+	std::string nick_name;
+	if (argc == 4)
+	{
+		nick_name = argv[3];
+	}
+	else
+	{
+		std::cout << "Please enter in your nickname : ";
+		std::getline(std::cin, nick_name);
+	}
+	SocketLib::SendString(client_socket, nick_name);
+
+	std::cout << "DEBUG : Finish sending a nickname" << std::endl;
+	std::cout << "Browsers: ";
+
+	while (true)
+	{
+		std::string numOfBrowser = SocketLib::GetInputWithBuffer(client_socket);
+
+		if (numOfBrowser.at(0) == '&')
+		{
+			std::cout << "DEBUG : Finish Getting a numOfBrowser" << std::endl;
+			break;
+		}
+
+		std::cout << "DEBUG : Get a numOfBrowser" << std::endl;
+		std::cout << numOfBrowser << ' ';
+	}
+	std::cout << std::endl << ' ';
+	
+	while (true)
+	{
+		std::cout << "DEBUG : Start to get writers" << std::endl;
+		std::string input = SocketLib::GetInputWithBuffer(client_socket);
+
+		if (input.at(0) == '&')
+		{
+			std::cout << "DEBUG : Finish Getting a writer names" << std::endl;
+			break;
+		}
+
+		std::cout << "DEBUG : Get a writer name" << std::endl;
+		std::cout << input << ' ';
+	}
+	std::cout << std::endl;
 	
 	std::string input_line;
 	while (true)
@@ -66,16 +108,8 @@ int main(int argc, char* argv[])
 
 		// send input string to server
 		// TODO: Prepend start and end delimiter
-		const int bytes_sent = send(client_socket, input_line.c_str(), input_line.size(), 0);
 
-		// if transferring is weird,
-		if (bytes_sent <= 0)
-		{
-			std::cout << "errno : " << errno << std::endl;
-			// print debug message and jump to next iteration
-			std::cout << ((bytes_sent < 0) ? "Failed to send message\n" : "Nothing sent\n");
-			break;
-		}
+		SocketLib::SendString(client_socket, input_line);
 
 		// sending is succeed
 	}

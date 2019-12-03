@@ -44,11 +44,13 @@ namespace SocketLib
     // Use Window's macro for invalid socket, so that it matches
     // with their SOCKET type.
     constexpr sock BAD_SOCKET = INVALID_SOCKET;
-
 #else // UNIX/Linux
     using sock = int;
     constexpr sock BAD_SOCKET = ~0;
 #endif
+
+	constexpr inline int bufferSize = 512;
+	const inline std::string TERMINATE_CHAR = "&";
 
     enum class AddressFamily
     {
@@ -82,5 +84,12 @@ namespace SocketLib
      */
      void CloseSocket(sock sockHandle);
 
-	 void PrintConnectingInfo(sockaddr_storage client_address, socklen_t socket_address_storage_size);
+	 void PrintConnectToClient(sockaddr_storage client_address, socklen_t socket_address_storage_size) noexcept;
+	
+	 void PrintConnectToServer(sockaddr* sock_address_information, socklen_t socket_address_storage_size) noexcept;
+	 void PrintCreatingListenerInfo(sockaddr* sock_address_information, socklen_t socket_address_storage_size) noexcept;
+
+	 std::string GetInputWithBuffer(const SocketLib::sock socket);
+
+	 bool SendString(SocketLib::sock socket, std::string msg);
 }

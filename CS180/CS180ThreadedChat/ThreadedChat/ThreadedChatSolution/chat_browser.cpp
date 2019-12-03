@@ -15,6 +15,12 @@
 #include <string>
 #include "SocketLib.h"
 
+int should_run = true;
+
+void Quit()
+{
+	should_run = false;
+}
 
 int main(int argc, char* argv[])
 {
@@ -24,7 +30,7 @@ int main(int argc, char* argv[])
 		std::cerr << "usage: " << argv[0] << " <server ip address> <port or service name>\n";
 		return 1;
 	}
-
+	
 	const char* const server_host = argv[1]; //ip address where server is opened
 	const char* const port = argv[2]; //port number 
 
@@ -32,19 +38,23 @@ int main(int argc, char* argv[])
 	const SocketLib::sock browser_socket = SocketLib::OpenClientSocket(server_host, port);
 
 	//If an error occured while getting the socket
-	if (browser_socker == SocketLib.BAD_SOCKET)
+	if (browser_socket == SocketLib::BAD_SOCKET)
 	{
+		std::cout << "Bad Socket!\n";
 		return 1;
 	}
 	
 	std::array<char, 1024> receive_buffer{};
-	while(true)
+	while(should_run)
 	{
+		
 		/************************************************************************************************************
 		    TODO : - Print the browser number (std::cout << browser_num.last().id++)
 		           - Print the currently joined writers (std::cout << active_writers.first() ~ active_writers.last())
-		           - Print any history chats if any exist (std::cout << chat_history.first() ~ chat_history.last()) 
+		           - Print history chats if any exist (std::cout << chat_history.first() ~ chat_history.last()) 
 		 ************************************************************************************************************/
+
+		/*Once a browser is connected to the server, it loads the history */
 		int bytes_received = 0;
 		int current_bytes_received;
 		do
@@ -52,7 +62,15 @@ int main(int argc, char* argv[])
 			//receive from the server
 			//the recv() function returns the length of the message written to the receive_buffer
 			current_bytes_received = recv(browser_socket, receive_buffer.data(), receive_buffer.size(), 0);
-
+			/***********************************************************************************************************
+					Trying to implement a custom "recv", with enum struct messageType
+					enum MessageType{
+					Chat,
+					Debug,
+					Ping,
+					ClientType
+					}			  
+			 ************************************************************************************************************/
 			//add the length of the message to the bytes_received variable
 			bytes_received += current_bytes_received;
 

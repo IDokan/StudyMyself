@@ -15,12 +15,14 @@
 #include <array>
 #include <thread>
 #include <mutex>
+#include <string>
+#include <algorithm>
 #include "SocketLib.h"
 
 struct Message
 {
-	const char* nickname;
-	const char* string;
+	std::string nickname;
+	std::string string;
 };
 
 namespace
@@ -38,17 +40,17 @@ namespace
 		std::mutex mtx;
 	};
 	// It should store a set of browser clients separately.
-	namespace BroswerData
+	namespace BrowserData
 	{
 		std::vector<SocketLib::sock> connected_browsers;
 		std::mutex mtx;
 	};
 	// It should maintain a history of all messages received from the writer clients.
-namespace MessageData
-{
-	std::vector<Message> history;
-	std::mutex mtx;
-};
+	namespace MessageData
+	{
+		std::vector<Message> history;
+		std::mutex mtx;
+	};
 }
 // TODO: Static struc? or idividual variables
 /*		For example,
@@ -65,9 +67,9 @@ namespace MessageData
 
 /* Helper functions */
 void DoWriterThing(const SocketLib::sock client_socket);
-void DoBrowserThing();
-std::string GetInputWithBuffer(const SocketLib::sock socket);
+void DoBrowserThing(SocketLib::sock client_socket);
 Message Pack(std::string nickname, std::string chatting);
+void SendChatroomProperty(SocketLib::sock client_socket);
 /* End of Helpers */
 int main(int argc, char* argv[])
 {
@@ -79,7 +81,7 @@ int main(int argc, char* argv[])
 	}
 
 	const char* port = argv[1];
-	const SocketLib::sock listen_socket = SocketLib::OpenListener(port, SocketLib::AddressFamily::IPv4);
+	const SocketLib::sock listen_socket = OpenListener(port, SocketLib::AddressFamily::IPv4);
 	socklen_t socket_address_storage_size = sizeof(sockaddr_storage);
 	bool should_run = true;
 
@@ -93,7 +95,7 @@ int main(int argc, char* argv[])
 	{
 		sockaddr_storage client_address = {};
 		// Call accept() to wait for connection request and to get a new connection socket to communicate with
-		const SocketLib::sock new_client_data_socket = accept(listen_socket, (sockaddr*)&client_address, &socket_address_storage_size);
+		const SocketLib::sock new_client_data_socket = accept(listen_socket, (sockaddr*)& client_address, &socket_address_storage_size);
 
 		if (new_client_data_socket == SocketLib::BAD_SOCKET)
 		{
@@ -101,12 +103,12 @@ int main(int argc, char* argv[])
 		}
 
 		// Print connection information
-		SocketLib::PrintConnectingInfo(client_address, socket_address_storage_size);
+		SocketLib::PrintConnectToClient(client_address, socket_address_storage_size);
 
 		// identify if it is a writer or browser client.
-		std::string identifier = GetInputWithBuffer(new_client_data_socket);
+		std::string identifier = SocketLib::GetInputWithBuffer(new_client_data_socket);
 
-		if (identifyingBuffer.at(0) == WRITER)
+		if (identifier.at(0) == WRITER)
 		{
 			// Send the number of Browsers and Writers nickname
 			/*
@@ -119,13 +121,15 @@ int main(int argc, char* argv[])
 			std::thread writerThread{ DoWriterThing, new_client_data_socket };
 			writerThread.detach();
 		}
-		else if (identifyingBuffer.at(0) == BROWSER)
+		else if (identifier.at(0) == BROWSER)
 		{
-			DoBrowserThing();
+			DoBrowserThing(new_client_data_socket);
 		}
 
 
-		  // TODO: There should be a server generated message each time a new writer client joins or exits.
+		// TODO: There should be a server generated message each time a new writer client joins or exits.
+		//When a new writer joins the chat room
+		//if()  
 	}
 }
 
@@ -145,55 +149,77 @@ void DoWriterThing(const SocketLib::sock client_socket)
 	 *
 	 * TODO: Messages should be prepended with the source writer clients name.
 	 */
-	 std::string nickname = GetInputWithBuffer(client_socket);
-	 {std::scoped_lock lock(NicknameData::mtx);
-		 NicknameData::connected_writers_nickname.push_back(nickname);
-	 }
+	std::string nickname = SocketLib::GetInputWithBuffer(client_socket);
+	{std::scoped_lock lock(NicknameData::mtx);
+	NicknameData::connected_writers_nickname.push_back(nickname);
 
+	//// TODO: DEBUG OUT, SHOULD REMOVED
+	//std::for_each(begin(NicknameData::connected_writers_nickname), end(NicknameData::connected_writers_nickname), [](const std::string& nickname)
+	//	{
+	//		std::cout << nickname << std::endl;
+	//	});
+	//std::cout << std::endl;
+	}
+	
+	SendChatroomProperty(client_socket);
+	
 	while (true)
 	{
-		// Get a string from client
-		const auto bytes_received = recv(client_socket, &receive_buffer.front(), bufferSize, 0);
+		std::string inputMessage = SocketLib::GetInputWithBuffer(client_socket);
 
-		// if invalid, skip this iteration
-		if (bytes_received <= 0)
-		{
-			continue;
-		}
+		// TODO: DEBUG OUT, SHOULD REMOVED
+		std::cout << inputMessage << std::endl;
 
-		// TODO: DEBUG Prepend string
-		receive_buffer[bytes_received] = '\0';
-		{ std::scoped_lock lock(MessageData::mtx);
-			history.puch_back(Pack(nickname, std::string(receive_buffer.data())));
+		{	std::scoped_lock lock(MessageData::mtx);
+		MessageData::history.push_back(Pack(nickname, inputMessage));
+
+			std::scoped_lock browser_lock(BrowserData::mtx);
+			for (const auto& socket : BrowserData::connected_browsers)
+			{
+				SocketLib::SendString(socket, inputMessage);
+			}
 		}
-		std::cout << receive_buffer.data() << std::endl;
 	}
 }
 
-void DoBrowserThing()
+void DoBrowserThing(SocketLib::sock client_socket)
 {
 	// Do browser thing
-	/*
-	 *
+	/*	0. Current Status output
+	 *	1. Send all message history when connected,
+	 *	2. Add it to the vector that named connected_browser
 	 *
 	 */
-	while (true)
-	 {
-		 std::cout << "Browser connected!\n";
-	 }
+
+	SendChatroomProperty(client_socket);
+
+
+	// TODO: I'm not sure history should be locked.....
+	std::scoped_lock lock(MessageData::mtx);
+	for (auto& msg : MessageData::history)
+	{
+		SocketLib::SendString(client_socket, msg.string);
+	}
+	std::scoped_lock browserLock(BrowserData::mtx);
+	BrowserData::connected_browsers.push_back(client_socket);
 }
 
-std::string GetInputWithBuffer(const SocketLib::sock socket)
+Message Pack(std::string nickname, std::string chatting)
 {
-	std::array<char, bufferSize> buffer;
-	long long bytes_received;
-	do
-	{
-		bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
+	return Message{ nickname.c_str(), chatting.c_str() };
+}
+
+void SendChatroomProperty(SocketLib::sock client_socket)
+{
+	SocketLib::SendString(client_socket, std::to_string('['));
+	SocketLib::SendString(client_socket, std::to_string(BrowserData::connected_browsers.size()));
+	SocketLib::SendString(client_socket, std::to_string(to_stringSocketLib::TERMINATE_CHAR);
+
+	{	std::scoped_lock lock(NicknameData::mtx);
+		for (const auto& nickname : NicknameData::connected_writers_nickname)
+		{
+			SocketLib::SendString(client_socket, nickname);
+		}
 	}
-	while (bytes_received <= 0);
-
-	buffer[bytes_received] = '\0';
-
-	return std::string(buffer.data());
+	SocketLib::SendString(client_socket, SocketLib::TERMINATE_CHAR);
 }

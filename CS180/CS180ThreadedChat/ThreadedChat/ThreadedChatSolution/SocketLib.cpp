@@ -110,6 +110,7 @@ namespace SocketLib
 			/*bind() : Associates a local address and a socket*/
 			if (bind(listenSocket, currentAddress->ai_addr, currentAddress->ai_addrlen) == SUCCESS)
 			{
+				PrintCreatingListenerInfo(currentAddress->ai_addr, currentAddress->ai_addrlen);
 				break;
 			}
 
@@ -160,10 +161,11 @@ namespace SocketLib
 				continue;
 			}
 
-			/*connect() : Establish a connection to a requested socket*/
+			/* connect() : Establish a connection to a requested socket */
 			// ai_addr of current address points to our input address.
 			if (connect(clientSocket, currentAddress->ai_addr, currentAddress->ai_addrlen) != FAILURE)
 			{
+				PrintConnectToServer(currentAddress->ai_addr, currentAddress->ai_addrlen);
 				break;
 			}
 
@@ -186,17 +188,68 @@ namespace SocketLib
 
 
 
-	void PrintConnectingInfo(sockaddr_storage client_address, socklen_t socket_address_storage_size)
+	void PrintConnectToClient(sockaddr_storage client_address, socklen_t socket_address_storage_size) noexcept
 	{
-		constexpr int NameBufferLength = 512;
-		std::array<char, NameBufferLength> client_hostname{};
-		std::array<char, NameBufferLength> client_port{};
+		std::array<char, bufferSize> client_hostname{};
+		std::array<char, bufferSize> client_port{};
 		const auto psocketaddress_information = reinterpret_cast<sockaddr*>(&client_address);
 		// Call getnameinfo() to get a string version of the clients (IP:Port) information
-		getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), NameBufferLength, &client_port.front(), NameBufferLength, NI_NUMERICHOST);
-		std::cout << "Connected to (" << client_hostname.data() << ", " << client_port.data() << ") / ";
-		getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), NameBufferLength, &client_port.front(), NameBufferLength, NI_NUMERICSERV);
+		getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), bufferSize, &client_port.front(), bufferSize, 0);
+		
+		std::cout << "Connected to client at (" << client_hostname.data() << ", " << client_port.data() << ") / ";
+		
+		getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), bufferSize, &client_port.front(), bufferSize, NI_NUMERICHOST);
 		std::cout << '(' << client_hostname.data() << ", " << client_port.data() << ")\n\n";
+	}
+
+	void PrintConnectToServer(sockaddr* sock_address_information, socklen_t socket_address_storage_size) noexcept
+	{
+		std::array<char, bufferSize> hostname{};
+		std::array<char, bufferSize> port{};
+		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), bufferSize, &port.front(), bufferSize, NI_NUMERICSERV);
+		std::cout << "Connected to sever at (" << hostname.data() << ", " << port.data() << ") / ";
+		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), bufferSize, &port.front(), bufferSize, NI_NUMERICHOST);
+		std::cout << '(' << hostname.data() << ", " << port.data() << ")\n\n";
+	}
+
+	void PrintCreatingListenerInfo(sockaddr* sock_address_information, socklen_t socket_address_storage_size) noexcept
+	{
+		std::array<char, bufferSize> hostname{};
+		std::array<char, bufferSize> port{};
+		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), bufferSize, &port.front(), bufferSize, NI_NUMERICHOST);
+		std::cout << "Connected to sever at (" << hostname.data() << ", " << port.data() << ") / ";
+		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), bufferSize, &port.front(), bufferSize, NI_NUMERICSERV);
+		std::cout << '(' << hostname.data() << ", " << port.data() << ")\n\n";
+	}
+
+
+	std::string GetInputWithBuffer(const SocketLib::sock socket)
+	{
+		std::array<char, bufferSize> buffer{};
+		long long bytes_received;
+		do
+		{
+			bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
+		} while (bytes_received <= 0);
+
+		buffer[bytes_received] = '\0';
+
+		return std::string(buffer.data());
+	}
+
+	bool SendString(SocketLib::sock socket, std::string msg)
+	{
+		const int bytes_sent = send(socket, msg.c_str(), msg.size(), 0);
+
+		// if transferring is weird,
+		if (bytes_sent <= 0)
+		{
+			std::cout << "errno : " << errno << std::endl;
+			// print debug message
+			std::cout << ((bytes_sent < 0) ? "Failed to send message\n" : "Nothing sent\n");
+			return false;
+		}
+		return true;
 	}
 }
 
