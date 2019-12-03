@@ -17,9 +17,10 @@
 
 int should_run = true;
 
-void Quit()
+void Quit(int sig)
 {
 	should_run = false;
+	//should I just exit(EXIT_SUCCESS) here?
 }
 
 int main(int argc, char* argv[])
@@ -30,6 +31,8 @@ int main(int argc, char* argv[])
 		std::cerr << "usage: " << argv[0] << " <server ip address> <port or service name>\n";
 		return 1;
 	}
+
+	signal(SIGINT, Quit);
 	
 	const char* const server_host = argv[1]; //ip address where server is opened
 	const char* const port = argv[2]; //port number 

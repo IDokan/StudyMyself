@@ -14,6 +14,10 @@
 #include <iostream>
 #include "SocketLib.h"
 
+#ifndef AI_ADDRCONFIG
+#define AI_ADDRCONFIG 0x400
+#endif
+
 namespace SocketLib
 {
 	// ========================================================================
@@ -226,20 +230,66 @@ namespace SocketLib
 	std::string GetInputWithBuffer(const SocketLib::sock socket)
 	{
 		std::array<char, bufferSize> buffer{};
-		long long bytes_received;
-		do
+		static std::string data{};
+		std::string returnValue{};
+		while (returnValue.empty() == true)
 		{
-			bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
-		} while (bytes_received <= 0);
+			if (const size_t bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
+				bytes_received > 0)
+			{
+				for (size_t i = 0; i < bytes_received; ++i)
+				{
+					// Parse received data
+					switch (buffer.at(i))
+					{
+					case '[':
+						//TODO: DEBUG code
+						if (data.empty() == false)	std::cout << "Inappropriate send\n";
+						data.clear();
+						break;
+					case ']':
+						returnValue = data;
+						break;
+					default:
+						data.push_back(buffer.at(i));
+						break;
+					}
+				}
+			}
+		}
 
-		buffer[bytes_received] = '\0';
-
-		return std::string(buffer.data());
+		return returnValue;
 	}
 
 	bool SendString(SocketLib::sock socket, std::string msg)
 	{
-		const int bytes_sent = send(socket, msg.c_str(), msg.size(), 0);
+		std::string buffer{};
+		std::string message = '[' + msg + ']';
+
+		for (size_t i = 0; i < message.size(); i++)
+		{
+			if (buffer.size() >= SEND_BUFFER_MAX)
+			{
+				if(const bool is_success = SocketLib::SEND(socket, buffer);
+					is_success == false)
+				{
+					return false;
+				}
+				buffer.clear();
+			}
+			buffer.push_back(message.at(i));
+		}
+		return true;
+	}
+
+	bool SEND(SocketLib::sock socket, const std::string& packed_msg)
+	{
+		if (packed_msg.size() > SEND_BUFFER_MAX)
+		{
+			std::cout << "Packed message has invalid size\n";
+			return false;
+		}
+		const int bytes_sent = send(socket, packed_msg.c_str(), packed_msg.size(), 0);
 
 		// if transferring is weird,
 		if (bytes_sent <= 0)

@@ -108,6 +108,9 @@ int main(int argc, char* argv[])
 		// identify if it is a writer or browser client.
 		std::string identifier = SocketLib::GetInputWithBuffer(new_client_data_socket);
 
+		// TODO: DEBUG PRINT
+		std::cout << "Identifier : " << identifier << std::endl;
+		
 		if (identifier.at(0) == WRITER)
 		{
 			// Send the number of Browsers and Writers nickname
@@ -211,9 +214,7 @@ Message Pack(std::string nickname, std::string chatting)
 
 void SendChatroomProperty(SocketLib::sock client_socket)
 {
-	SocketLib::SendString(client_socket, std::to_string('['));
 	SocketLib::SendString(client_socket, std::to_string(BrowserData::connected_browsers.size()));
-	SocketLib::SendString(client_socket, std::to_string(to_stringSocketLib::TERMINATE_CHAR);
 
 	{	std::scoped_lock lock(NicknameData::mtx);
 		for (const auto& nickname : NicknameData::connected_writers_nickname)

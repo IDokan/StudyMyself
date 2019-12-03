@@ -15,9 +15,15 @@
 #include <array>
 #include <string>
 #include "SocketLib.h"
+/*Global variables*/
+int should_run = true;
 
 /* Helper functions */
-//void
+void Quit(int sig)
+{
+	should_run = false;
+	//should I just exit(EXIT_SUCCESS) here?
+}
 /* End of Helpers */
 
 // TODO: If nickname is missing, make a connecting & printing connection information first, after then get a nick name
@@ -29,7 +35,9 @@ int main(int argc, char* argv[])
 		std::cerr << "usage: " << argv[0] << " <server ip address> <port or service name> [nickname]\n";
 		return 1;
 	}
-
+	
+	signal(SIGINT, Quit);
+	
 	const char* const server_host = argv[1];
 	const char* const port = argv[2];
 
@@ -96,7 +104,7 @@ int main(int argc, char* argv[])
 	std::cout << std::endl;
 	
 	std::string input_line;
-	while (true)
+	while (should_run)
 	{
 		std::getline(std::cin, input_line);
 

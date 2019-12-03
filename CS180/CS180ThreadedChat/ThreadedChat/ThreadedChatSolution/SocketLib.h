@@ -49,8 +49,9 @@ namespace SocketLib
     constexpr sock BAD_SOCKET = ~0;
 #endif
 
-	constexpr inline int bufferSize = 512;
+	constexpr inline size_t bufferSize = 512;
 	const inline std::string TERMINATE_CHAR = "&";
+	constexpr inline size_t SEND_BUFFER_MAX = 6;
 
     enum class AddressFamily
     {
@@ -92,4 +93,6 @@ namespace SocketLib
 	 std::string GetInputWithBuffer(const SocketLib::sock socket);
 
 	 bool SendString(SocketLib::sock socket, std::string msg);
+
+	 bool SEND(SocketLib::sock socket, const std::string& packed_msg);
 }
