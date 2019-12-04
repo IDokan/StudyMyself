@@ -174,8 +174,8 @@ void DoWriterThing(const SocketLib::sock client_socket)
 		if(bool isRecvSuccess = SocketLib::GetInputWithBuffer(client_socket, inputMessage);
 			isRecvSuccess == false)
 		{
-			// TODO: Add to history that writer is gone,
-			// TODO: Delete
+			// TODO: Add to prepend message that notify writer is gone,
+			// TODO: Delete writer name in NicknameData::connected_writers_nickname
 			return;
 		}
 
