@@ -90,7 +90,7 @@ namespace SocketLib
 	 void PrintConnectToServer(sockaddr* sock_address_information, socklen_t socket_address_storage_size) noexcept;
 	 void PrintCreatingListenerInfo(sockaddr* sock_address_information, socklen_t socket_address_storage_size) noexcept;
 
-	 std::string GetInputWithBuffer(const SocketLib::sock socket);
+	 bool GetInputWithBuffer(const SocketLib::sock socket, std::string& str);
 
 	 bool SendString(SocketLib::sock socket, std::string msg);
 

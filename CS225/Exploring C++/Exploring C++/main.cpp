@@ -14,7 +14,7 @@ struct vector2
  *	The type of obj must be Destructurable:
  *	
  *	Must be public
- *	Must be direct members of the type or members of the same public base clas of the type
+ *	Must be direct members of the type or members of the same public base class of the type
  *	Cannot be anonymous unions
  *
  *	uses regular auto deduction rules(auto const, auto&, auto&&)
@@ -27,13 +27,11 @@ void autoMultipleInitializerDemo()
 	std::cout << v << std::endl;
 	
 	std::array<int, 3> arr = { 1, 2, 3 };
-	auto [x, y, z] = arr;
-	std::cout << x << std::endl;
-	std::cout << y << std::endl;
-	std::cout << z << std::endl;
+	auto const [x, y, z] = arr;
+	auto& [q, w, e] = arr;
+	auto&& [i, o, p] = arr;
 
 	// std::tuple, std::pair
-
 	std::map<int, std::string> map;
 	for (auto&& [key, value] : map)
 	{
@@ -65,13 +63,14 @@ private:
 
 char my_string::PopBack()
 {
-	char s;
+	char s = '\0';
 
-	std::lock_guard<std::mutex> l(mtx_);
-	if (!pool_.empty())
-	{
-		std::swap(s, pool_.back());
-		pool_.pop_back();
+	{	std::lock_guard<std::mutex> l(mtx_);
+		if (!pool_.empty())
+		{
+			std::swap(s, pool_.back());
+			pool_.pop_back();
+		}
 	}
 
 	// No need to lock here
@@ -98,10 +97,7 @@ char my_string::PopBackC17()
 	return s;
 }
 
-/*	2. selection sequence with initializers
- *
- * 
- */
+/* 2. selection sequence with initializers */
 void selectionSequenceWithInitializersDemo()
 {
 	int storage;
@@ -110,21 +106,16 @@ void selectionSequenceWithInitializersDemo()
 	{
 		std::cout << "Success! result is " << storage;
 	}
-	if (bool is_success = GetData(nullptr);
-		is_success == true)
-	{
-		std::cout << "Success! result is " << storage;
-	}
 
 	// Scope
 	// Nothing alive
 	if (bool x = false;
-		x)
+		x == true)
 	{
-		// X is alive
+		// x is alive
 	}
 	else if(bool y = false;
-		y)
+		y == true)
 	{
 		// Both x and y are alive
 	}
@@ -165,44 +156,34 @@ void print(T0&& t0, Ts&& ... ts)
 }
 /* End of Before Code */
 
-/* C++17 Code*/
+/* Buggy Code*/
 template<typename T0, typename... Ts>
-void printC17(T0&& t0, Ts&&... ts)
+void printBuggy(T0&& t0, Ts&& ... ts)
 {
 	std::cout << std::forward<T0>(t0) << std::endl;
 
-	// Difference with only if is instanciated or not
-	/*	Lecturer's comment!
-	 *	if this condition is not true,
-	 *	statement needs to parse, but not instantiated.
-	 *
-	 *	When you're on the last element here,
-	 *		but there's no function overload
-	 *		that matches over here is fine
-	 *		because this was never instantiated.
-	 *
-	 *	Now if you didn't have the if constexpr here,
-	 *		you would be trying to call print
-	 *		with zero arguments
-	 *		when this parameter pack is empty,
-	 *		so you get a compiler error.
-	 *	But with if constexpr,
-	 *		you don't get the compiler error,
-	 *		you just never instantiate.
-	 */
-	if constexpr(sizeof...(ts))
+	// Difference with only if is instantiated or not
+	if (sizeof...(ts))
+	{
+		printBuggy(std::forward<Ts>(ts)...);
+	}
+}
+
+/* C++17 Code*/
+template<typename T0, typename... Ts>
+void printC17(T0&& t0, Ts&& ... ts)
+{
+	std::cout << std::forward<T0>(t0) << std::endl;
+
+	// Difference with only if is instantiated or not
+	if constexpr (sizeof...(ts))
 	{
 		printC17(std::forward<Ts>(ts)...);
 	}
 }
 
-/*	Fold Expression
- *
- * 
- */
-
 /* End of C++17 Code*/
 int main(int argc, char* argv[])
 {
-	printC17(1, 2, 3, 4);
+	printBuggy(1, 2, 3, 4);
 }

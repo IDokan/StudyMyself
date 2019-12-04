@@ -227,16 +227,16 @@ namespace SocketLib
 	}
 
 
-	std::string GetInputWithBuffer(const SocketLib::sock socket)
+	bool GetInputWithBuffer(const SocketLib::sock socket, std::string& str)
 	{
 		std::array<char, bufferSize> buffer{};
 		static std::string data{};
-		std::string returnValue{};
-
-		while (returnValue.empty() == true)
+		
+		str.clear();
+		while (str.empty() == true)
 		{
 			if (const long long bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
-				bytes_received >= 0)
+				bytes_received > 0)
 			{
 
 				for (long long i = 0; i < bytes_received; ++i)
@@ -244,13 +244,12 @@ namespace SocketLib
 					// Parse received data
 					switch (buffer.at(i))
 					{
-					case '[':
+					case '\0':
 						//TODO: DEBUG code
-						if (data.empty() == false)	std::cout << "Inappropriate send\n";
-						data.clear();
-						break;
-					case ']':
-						returnValue = data;
+						if (data.empty() == false)
+						{
+							str = data;
+						}
 						data.clear();
 						break;
 					default:
@@ -259,16 +258,22 @@ namespace SocketLib
 					}
 				}
 			}
+			else
+			{
+				// TODO: DEBUG PRINTING
+				std::cout << "Writer detection is detected!\n";
+				return false;
+			}
 		}
 
-		return returnValue;
+		return true;
 	}
 
 	bool SendString(SocketLib::sock socket, std::string msg)
 	{
 		std::cout << "msg = " << msg << std::endl;	// DEBUG
 		std::string buffer{};
-		std::string message = '[' + msg + ']';
+		std::string message = '\0' + msg + '\0';
 		std::cout << "message = " << message << std::endl;	// DEBUG
 
 		for (size_t i = 0; i < message.size(); i++)

@@ -106,7 +106,12 @@ int main(int argc, char* argv[])
 		SocketLib::PrintConnectToClient(client_address, socket_address_storage_size);
 
 		// identify if it is a writer or browser client.
-		std::string identifier = SocketLib::GetInputWithBuffer(new_client_data_socket);
+		std::string identifier;
+		if(bool isGot = SocketLib::GetInputWithBuffer(new_client_data_socket, identifier);
+			isGot == false)
+		{
+			continue;
+		}
 
 		if (identifier.at(0) == WRITER)
 		{
@@ -160,24 +165,49 @@ void DoWriterThing(const SocketLib::sock client_socket)
 	//	});
 	//std::cout << std::endl;
 	}
-	
+
 	SendChatroomProperty(client_socket);
-	
+
 	while (true)
 	{
-		std::string inputMessage = SocketLib::GetInputWithBuffer(client_socket);
+		std::string inputMessage;
+		if(bool isRecvSuccess = SocketLib::GetInputWithBuffer(client_socket, inputMessage);
+			isRecvSuccess == false)
+		{
+			// TODO: Add to history that writer is gone,
+			// TODO: Delete
+			return;
+		}
 
 		// TODO: DEBUG OUT, SHOULD REMOVED
 		std::cout << inputMessage << std::endl;
 
 		{	std::scoped_lock lock(MessageData::mtx);
 		MessageData::history.push_back(Pack(nickname, inputMessage));
+		}
 
-			std::scoped_lock browser_lock(BrowserData::mtx);
-			for (const auto& socket : BrowserData::connected_browsers)
+		{	std::scoped_lock browser_lock(BrowserData::mtx);
+		std::vector<SocketLib::sock> removedSockets;
+		for (const auto& socket : BrowserData::connected_browsers)
+		{
+			// If send result is error,
+			if (const bool isSent = SocketLib::SendString(socket, inputMessage);
+				isSent == true)
 			{
-				SocketLib::SendString(socket, inputMessage);
+				// Add to remove buffer
+				removedSockets.push_back(socket);
 			}
+		}
+		// After finishing for_each loop,
+		if (removedSockets.empty() == false)
+		{
+			for (const auto& socket : removedSockets)
+			{
+				// Delete same variables with stored variable in removedSockets
+				const auto deletedSocket = std::find(begin(BrowserData::connected_browsers), end(BrowserData::connected_browsers), socket);
+				BrowserData::connected_browsers.erase(deletedSocket);
+			}
+		}
 		}
 	}
 }
@@ -215,10 +245,10 @@ void SendChatroomProperty(SocketLib::sock client_socket)
 
 	std::string nicknames{};
 	{	std::scoped_lock lock(NicknameData::mtx);
-		for (const auto& nickname : NicknameData::connected_writers_nickname)
-		{
-			nicknames = nicknames + nickname + ' ';
-		}
+	for (const auto& nickname : NicknameData::connected_writers_nickname)
+	{
+		nicknames = nicknames + nickname + ' ';
 	}
-			SocketLib::SendString(client_socket, nicknames);
+	}
+	SocketLib::SendString(client_socket, nicknames);
 }
