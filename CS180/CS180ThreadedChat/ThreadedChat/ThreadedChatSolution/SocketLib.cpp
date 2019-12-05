@@ -181,12 +181,12 @@ namespace SocketLib
 		return clientSocket;
 	}
 
-	void CloseSocket(sock socketHandle)
+	void CloseSocket(sock socket_handle)
 	{
 #ifdef _WIN32
-		closesocket(socketHandle);
+		closesocket(socket_handle);
 #else
-		close(socketHandle);
+		close(socket_handle);
 #endif
 	}
 
@@ -221,7 +221,7 @@ namespace SocketLib
 		std::array<char, bufferSize> hostname{};
 		std::array<char, bufferSize> port{};
 		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), bufferSize, &port.front(), bufferSize, NI_NUMERICHOST);
-		std::cout << "Connected to sever at (" << hostname.data() << ", " << port.data() << ") / ";
+		std::cout << "Created listening socket on (" << hostname.data() << ", " << port.data() << ") / ";
 		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), bufferSize, &port.front(), bufferSize, NI_NUMERICSERV);
 		std::cout << '(' << hostname.data() << ", " << port.data() << ")\n\n";
 	}
@@ -261,7 +261,7 @@ namespace SocketLib
 			else
 			{
 				// TODO: DEBUG PRINTING
-				std::cout << "Writer detection is detected!\n";
+				std::cout << "Writer disconnection is detected!\n";
 				return false;
 			}
 		}

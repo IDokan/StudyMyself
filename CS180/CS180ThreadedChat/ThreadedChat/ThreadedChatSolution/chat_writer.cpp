@@ -65,11 +65,13 @@ int main(int argc, char* argv[])
 	}
 	SocketLib::SendString(client_socket, nick_name);
 	std::cout << "Try to get a browsers number\n";	// DEBUG
-	std::string browserNum = SocketLib::GetInputWithBuffer(client_socket);
+	std::string browserNum;
+	SocketLib::GetInputWithBuffer(client_socket, browserNum);
 	std::cout << "Browsers: " << browserNum << std::endl;
 	std::cout << "Success to get a input and printed\n";	// DEBUG
 	std::cout << "Try to get a nicknames\n";	// DEBUG
-	std::string nicknames = SocketLib::GetInputWithBuffer(client_socket);
+	std::string nicknames;
+	SocketLib::GetInputWithBuffer(client_socket, nicknames);
 	std::cout << " Writers: " << nicknames << std::endl;
 	std::cout << "Success to get a input and printed\n";	// DEBUG
 	

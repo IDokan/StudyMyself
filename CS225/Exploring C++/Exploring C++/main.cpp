@@ -1,3 +1,15 @@
+/* Start Header --------------------------------------------------------------
+Copyright (C) 2019 DigiPen Institute of Technology.
+Reproduction or disclosure of this file or its contents without the prior
+written consent of DigiPen Institute of Technology is prohibited.
+File Name: main.cpp
+Purpose: Final Assignment
+Project: Exploring C++
+Author: sinil.gang
+Creation date: 12.05.2019
+- End Header ----------------------------------------------------------------
+*/
+
 #include <iostream>
 #include <array>
 #include <map>
@@ -30,7 +42,7 @@ void autoMultipleInitializerDemo()
 	auto const [x, y, z] = arr;
 	auto& [q, w, e] = arr;
 	auto&& [i, o, p] = arr;
-
+	
 	// std::tuple, std::pair
 	std::map<int, std::string> map;
 	for (auto&& [key, value] : map)
@@ -101,10 +113,10 @@ char my_string::PopBackC17()
 void selectionSequenceWithInitializersDemo()
 {
 	int storage;
-	if (bool is_success = GetData(&storage);
-		is_success == true)
+	bool is_success = GetData(&storage);
+	if (	is_success == true)
 	{
-		std::cout << "Success! result is " << storage;
+		std::cout << "Success! result is " << storage << std::endl;
 	}
 
 	// Scope
@@ -182,8 +194,48 @@ void printC17(T0&& t0, Ts&& ... ts)
 	}
 }
 
+void IfConstexprDemo()
+{
+	print(1, 2, 3, 4);
+	//printBuggy(1, 2, 3, 4);
+	printC17(1, 2, 3, 4);
+}
+
+void PrintUsage(const char* program_name)
+{
+	std::cout << "usage : " << program_name << " <test case>" << "\n\n";
+	std::cout << "0 -> autoMultipleInitializerDemo()\n";
+	std::cout << "1 -> selectionSequenceWithInitializersDemo()\n";
+	std::cout << "2 -> IfConstexprDemo()\n";
+}
+
 /* End of C++17 Code*/
 int main(int argc, char* argv[])
 {
-	printBuggy(1, 2, 3, 4);
+	if (argc != 2)
+	{
+		PrintUsage(argv[0]);
+		return 0;
+	}
+	int test_number = atoi(argv[1]);
+	if (test_number < 0 || test_number > 2)
+	{
+		PrintUsage(argv[0]);
+		return 0;
+	}
+
+	switch (test_number)
+	{
+	case 0:
+		autoMultipleInitializerDemo();
+		break;
+	case 1:
+		selectionSequenceWithInitializersDemo();
+		break;
+	case 2:
+		IfConstexprDemo();
+		break;
+	default:
+		break;
+	}
 }

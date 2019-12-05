@@ -83,7 +83,7 @@ namespace SocketLib
      * \brief Use this to close and free up the resources associated with the provided socket.
      * \param socket_handle should be a currently active socket
      */
-     void CloseSocket(sock sockHandle);
+     void CloseSocket(sock sock_handle);
 
 	 void PrintConnectToClient(sockaddr_storage client_address, socklen_t socket_address_storage_size) noexcept;
 	
