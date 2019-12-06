@@ -112,9 +112,9 @@ namespace SocketLib
 				continue; //Socket failed, try the next one
 
 			/*bind() : Associates a local address and a socket*/
-			if (bind(listenSocket, currentAddress->ai_addr, currentAddress->ai_addrlen) == SUCCESS)
+			if (bind(listenSocket, currentAddress->ai_addr, static_cast<int>(currentAddress->ai_addrlen)) == SUCCESS)
 			{
-				PrintCreatingListenerInfo(currentAddress->ai_addr, currentAddress->ai_addrlen);
+				PrintCreatingListenerInfo(currentAddress->ai_addr, static_cast<socklen_t>(currentAddress->ai_addrlen));
 				break;
 			}
 
@@ -160,16 +160,16 @@ namespace SocketLib
 		{
 			// get a socket with current setting
 			clientSocket = socket(currentAddress->ai_family, currentAddress->ai_socktype, currentAddress->ai_protocol);
-			if(clientSocket == BAD_SOCKET)
+			if (clientSocket == BAD_SOCKET)
 			{
 				continue;
 			}
 
 			/* connect() : Establish a connection to a requested socket */
 			// ai_addr of current address points to our input address.
-			if (connect(clientSocket, currentAddress->ai_addr, currentAddress->ai_addrlen) != FAILURE)
+			if (connect(clientSocket, currentAddress->ai_addr, static_cast<int>(currentAddress->ai_addrlen)) != FAILURE)
 			{
-				PrintConnectToServer(currentAddress->ai_addr, currentAddress->ai_addrlen);
+				PrintConnectToServer(currentAddress->ai_addr, static_cast<socklen_t>(currentAddress->ai_addrlen));
 				break;
 			}
 
@@ -199,9 +199,9 @@ namespace SocketLib
 		const auto psocketaddress_information = reinterpret_cast<sockaddr*>(&client_address);
 		// Call getnameinfo() to get a string version of the clients (IP:Port) information
 		getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), bufferSize, &client_port.front(), bufferSize, 0);
-		
+
 		std::cout << "Connected to client at (" << client_hostname.data() << ", " << client_port.data() << ") / ";
-		
+
 		getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), bufferSize, &client_port.front(), bufferSize, NI_NUMERICHOST);
 		std::cout << '(' << client_hostname.data() << ", " << client_port.data() << ")\n\n";
 	}
@@ -237,26 +237,30 @@ namespace SocketLib
 		std::array<char, bufferSize> buffer{};
 		while (str.empty() == true)
 		{
-			if (size_t bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
+			if (long long bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
 				bytes_received > 0)
 			{
 
-				for (size_t i = 0; i < bytes_received; ++i)
+				for (long long i = 0; i < bytes_received; ++i)
 				{
 					// Parse received data
-					switch (buffer.at(i))
+					switch (buffer.at(static_cast<size_t>(i)))
 					{
 						// If the char is identifying character,
 					case '\0':
+						std::cout << "\nDEBUG : null terminator detected\n";    // DEBUG
 						if (data.empty() == false)
 						{
+							std::cout << "\nDEBUG : currently, str = " << str << ", data = " << data << std::endl;    // DEBUG
 							str = data;
+							return true;
 						}
 						data.clear();
 						break;
 						// Otherwise, 
 					default:
-						data.push_back(buffer.at(i));
+						std::cout << "\nDEBUG : index = " << i << "buffer.at(i) = " << buffer.at(static_cast<size_t>(i)) << std::endl;;    // DEBUG
+						data.push_back(buffer.at(static_cast<size_t>(i)));
 						break;
 					}
 				}
@@ -264,6 +268,7 @@ namespace SocketLib
 			else
 			{
 				// writer is disconnected.
+				std::cout << "\nDEBUG : Writer disconnection is detected!\n";	// DEBUG
 				return false;
 			}
 		}
@@ -274,7 +279,9 @@ namespace SocketLib
 	bool SendString(SocketLib::sock socket, std::string msg)
 	{
 		// append identify character at starting and end points
+		std::cout << "\nDEBUG : msg = " << msg << std::endl;	// DEBUG
 		std::string message = '\0' + msg + '\0';
+		std::cout << "\nDEBUG : message = " << message << std::endl;	// DEBUG
 
 		std::string sending_buffer{};
 		for (size_t i = 0; i < message.size(); i++)
@@ -282,8 +289,9 @@ namespace SocketLib
 			// If sending buffer is full, send it immediately
 			if (sending_buffer.size() >= SEND_BUFFER_MAX)
 			{
+				std::cout << "\nDEBUG : send : buffer = " << sending_buffer << std::endl;	// DEBUG
 				// if send if failed,
-				if(const bool is_success = SocketLib::SEND(socket, sending_buffer);
+				if (const bool is_success = SocketLib::SEND(socket, sending_buffer);
 					is_success == false)
 				{
 					return false;
@@ -291,13 +299,14 @@ namespace SocketLib
 				// After sending the buffer clear it to store a new part of given string data
 				sending_buffer.clear();
 			}
-			
+
 			// Store a character in buffer
 			sending_buffer.push_back(message.at(i));
 		}
 
 		// When loop is finished, if buffer is not empty
-		if (sending_buffer.empty() == false)
+		std::cout << "\nDEBUG : send : buffer = " << sending_buffer << std::endl;	// DEBUG
+		// if (sending_buffer.empty() == false)
 		{
 			// send lastly remain string in buffer.
 			if (const bool is_success = SocketLib::SEND(socket, sending_buffer);
@@ -306,7 +315,7 @@ namespace SocketLib
 				return false;
 			}
 		}
-		
+
 		return true;
 	}
 
@@ -318,14 +327,14 @@ namespace SocketLib
 		{
 			return false;
 		}
-		
-		const int bytes_sent = send(socket, packed_msg.c_str(), packed_msg.size(), 0);
+
+		const int bytes_sent = send(socket, packed_msg.c_str(), static_cast<int>(packed_msg.size()), 0);
 
 		// if transferring is failed,
 		if (bytes_sent <= 0)
 		{
 			std::cout << "errno : " << errno << std::endl;
-			// print debug message
+			// print simple error report message
 			std::cout << ((bytes_sent < 0) ? "Failed to send message\n" : "Nothing sent\n");
 			return false;
 		}

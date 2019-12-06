@@ -21,8 +21,8 @@
 
 namespace
 {
-	constexpr char WRITER = '0';
-	constexpr char BROWSER = '1';
+	constexpr char WRITER = 'w';
+	constexpr char BROWSER = 'b';
 	constexpr int bufferSize = 512;
 
 	/* TODO: Make sure these things. Currently, Not Sure all of it */
@@ -63,6 +63,7 @@ namespace
 void DoWriterThing(const SocketLib::sock client_socket);
 void DoBrowserThing(SocketLib::sock client_socket);
 void SendChatroomProperty(SocketLib::sock client_socket);
+void BroadcastMessageToAllBrowsers(std::string message);
 /* End of Helpers */
 int main(int argc, char* argv[])
 {
@@ -108,6 +109,7 @@ int main(int argc, char* argv[])
 
 		if (identifier.at(0) == WRITER)
 		{
+			std::cout << "DEBUG : Get a WRITER" << std::endl;
 			// Send the number of Browsers and Writers nickname
 			/*
 			Browsers: %d
@@ -121,6 +123,7 @@ int main(int argc, char* argv[])
 		}
 		else if (identifier.at(0) == BROWSER)
 		{
+			std::cout << "DEBUG : Get a BROWSER" << std::endl;
 			DoBrowserThing(new_client_data_socket);
 		}
 
@@ -147,21 +150,24 @@ void DoWriterThing(const SocketLib::sock client_socket)
 	 *
 	 * TODO: Messages should be prepended with the source writer clients name.
 	 */
+	// Send a chat room information first
+	SendChatroomProperty(client_socket);
+
+	// Get a nickname later
 	std::string nickname;
 	if (bool isReceived = SocketLib::GetInputWithBuffer(client_socket, nickname);
 		isReceived == true)
 	{
 		std::scoped_lock lock(NicknameData::mtx);
-		
+
 		NicknameData::connected_writers_nickname.push_back(nickname);
 
 		// Add message that notify writer has joined!
 		std::scoped_lock msgLock(MessageData::mtx);
-		MessageData::history.push_back(nickname + " has joined the chat room!\n");
+		MessageData::history.push_back(nickname + " has joined the chat room!");
+		BroadcastMessageToAllBrowsers(MessageData::history.back());
 	}
 
-		SendChatroomProperty(client_socket);
-	
 
 	while (true)
 	{
@@ -173,43 +179,23 @@ void DoWriterThing(const SocketLib::sock client_socket)
 			// Add message that notify writer is gone,
 			std::scoped_lock lock(MessageData::mtx);
 			MessageData::history.push_back(nickname + " has left the chat room...");
+			BroadcastMessageToAllBrowsers(MessageData::history.back());
 			// Delete writer name in NicknameData::connected_writers_nickname
 			std::scoped_lock lock2(NicknameData::mtx);
 			const auto it = std::find(begin(NicknameData::connected_writers_nickname), end(NicknameData::connected_writers_nickname), nickname);
 			NicknameData::connected_writers_nickname.erase(it);
+
 			return;
 		}
 
 		// TODO: DEBUG OUT, SHOULD REMOVED
-		std::cout << inputMessage << std::endl;
+		std::cout << "\nDEBUG : " << inputMessage << std::endl;
 
 		{	std::scoped_lock lock(MessageData::mtx);
 		MessageData::history.push_back(nickname + "> " + inputMessage);
+		BroadcastMessageToAllBrowsers(MessageData::history.back());
 		}
-
-		{	std::scoped_lock browser_lock(BrowserData::mtx);
-		std::vector<SocketLib::sock> removedSockets;
-		for (const auto& socket : BrowserData::connected_browsers)
-		{
-			// If send result is error,
-			if (const bool isSent = SocketLib::SendString(socket, MessageData::history.back());
-				isSent == false)
-			{
-				// Add to remove buffer
-				removedSockets.push_back(socket);
-			}
-		}
-		// After finishing for_each loop,
-		if (removedSockets.empty() == false)
-		{
-			for (const auto& socket : removedSockets)
-			{
-				// Delete same variables with stored variable in removedSockets
-				const auto deletedSocket = std::find(begin(BrowserData::connected_browsers), end(BrowserData::connected_browsers), socket);
-				BrowserData::connected_browsers.erase(deletedSocket);
-			}
-		}
-		}
+		
 	}
 }
 
@@ -237,9 +223,10 @@ void DoBrowserThing(SocketLib::sock client_socket)
 
 void SendChatroomProperty(SocketLib::sock client_socket)
 {
-	std::string browser_info = "Browsers : " + std::to_string(BrowserData::connected_browsers.size());
-	SocketLib::SendString(client_socket, browser_info);
+	// Make browser info line,
+	std::string browser_info = "Browsers : " + std::to_string(BrowserData::connected_browsers.size()) + '\n';
 
+	// Make nicknames info line,
 	std::string nicknames{};
 	{	std::scoped_lock lock(NicknameData::mtx);
 	for (const auto& nickname : NicknameData::connected_writers_nickname)
@@ -248,5 +235,33 @@ void SendChatroomProperty(SocketLib::sock client_socket)
 	}
 	}
 	std::string writers_info = " Writers : " + nicknames;
-	SocketLib::SendString(client_socket, writers_info);
+
+	// combine the both lines in one string and send it!
+	SocketLib::SendString(client_socket, browser_info + writers_info);
+}
+
+void BroadcastMessageToAllBrowsers(const std::string message)
+{
+	std::scoped_lock browser_lock(BrowserData::mtx);
+	std::vector<SocketLib::sock> removedSockets;
+	for (const auto& socket : BrowserData::connected_browsers)
+	{
+		// If send result is error,
+		if (const bool isSent = SocketLib::SendString(socket, message);
+			isSent == false)
+		{
+			// Add to remove buffer
+			removedSockets.push_back(socket);
+		}
+	}
+	// After finishing for_each loop,
+	if (removedSockets.empty() == false)
+	{
+		for (const auto& socket : removedSockets)
+		{
+			// Delete same variables with stored variable in removedSockets
+			const auto deletedSocket = std::find(begin(BrowserData::connected_browsers), end(BrowserData::connected_browsers), socket);
+			BrowserData::connected_browsers.erase(deletedSocket);
+		}
+	}
 }

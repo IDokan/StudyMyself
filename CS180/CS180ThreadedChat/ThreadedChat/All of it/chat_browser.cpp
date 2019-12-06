@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 	}
 
 	// '1' means I am writer
-	const std::string identifierBuffer = "1";
+	const std::string identifierBuffer = "browser";
 	SocketLib::SendString(browser_socket, identifierBuffer);
 	
 	bool is_recv_success;

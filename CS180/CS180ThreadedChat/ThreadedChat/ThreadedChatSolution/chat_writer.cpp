@@ -18,14 +18,6 @@
 /*Global variables*/
 int should_run = true;
 
-/* Helper functions */
-/*void Quit(int sig)
-{
-	should_run = false;
-	//should I just exit(EXIT_SUCCESS) here?
-}*/
-/* End of Helpers */
-
 // TODO: If nickname is missing, make a connecting & printing connection information first, after then get a nick name
 int main(int argc, char* argv[])
 {
@@ -35,7 +27,7 @@ int main(int argc, char* argv[])
 		std::cerr << "usage: " << argv[0] << " <server ip address> <port or service name> [nickname]\n";
 		return 1;
 	}
-	
+
 	const char* const server_host = argv[1];
 	const char* const port = argv[2];
 
@@ -49,8 +41,8 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	// '0' means I am writer
-	const std::string identifierBuffer = "0";
+	// "writer" means I am writer
+	const std::string identifierBuffer = "writer";
 	SocketLib::SendString(client_socket, identifierBuffer);
 
 	std::string nick_name;
@@ -63,18 +55,14 @@ int main(int argc, char* argv[])
 		std::cout << "Please enter in your nickname : ";
 		std::getline(std::cin, nick_name);
 	}
+	// Get a chat room information
+	std::string chat_room_info;
+	SocketLib::GetInputWithBuffer(client_socket, chat_room_info);
+	std::cout << chat_room_info << std::endl;
+
+	// Send string later
 	SocketLib::SendString(client_socket, nick_name);
-	std::cout << "Try to get a browsers number\n";	// DEBUG
-	std::string browserNum;
-	SocketLib::GetInputWithBuffer(client_socket, browserNum);
-	std::cout << "Browsers: " << browserNum << std::endl;
-	std::cout << "Success to get a input and printed\n";	// DEBUG
-	std::cout << "Try to get a nicknames\n";	// DEBUG
-	std::string nicknames;
-	SocketLib::GetInputWithBuffer(client_socket, nicknames);
-	std::cout << " Writers: " << nicknames << std::endl;
-	std::cout << "Success to get a input and printed\n";	// DEBUG
-	
+
 	std::string input_line;
 	while (should_run)
 	{
