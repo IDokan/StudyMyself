@@ -152,6 +152,7 @@ void DoWriterThing(const SocketLib::sock client_socket)
 		isReceived == true)
 	{
 		std::scoped_lock lock(NicknameData::mtx);
+		
 		NicknameData::connected_writers_nickname.push_back(nickname);
 
 		// Add message that notify writer has joined!
@@ -159,7 +160,8 @@ void DoWriterThing(const SocketLib::sock client_socket)
 		MessageData::history.push_back(nickname + " has joined the chat room!\n");
 	}
 
-	SendChatroomProperty(client_socket);
+		SendChatroomProperty(client_socket);
+	
 
 	while (true)
 	{

@@ -229,29 +229,32 @@ namespace SocketLib
 
 	bool GetInputWithBuffer(const SocketLib::sock socket, std::string& str)
 	{
-		std::array<char, bufferSize> buffer{};
-		static std::string data{};
-		
+		// Before use it, clear once.
 		str.clear();
+
+		// data buffer is static because even though output buffer is filled, buffer preserve data that come via recv().
+		static std::string data{};
+		std::array<char, bufferSize> buffer{};
 		while (str.empty() == true)
 		{
-			if (const long long bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
+			if (size_t bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
 				bytes_received > 0)
 			{
 
-				for (long long i = 0; i < bytes_received; ++i)
+				for (size_t i = 0; i < bytes_received; ++i)
 				{
 					// Parse received data
 					switch (buffer.at(i))
 					{
+						// If the char is identifying character,
 					case '\0':
-						//TODO: DEBUG code
 						if (data.empty() == false)
 						{
 							str = data;
 						}
 						data.clear();
 						break;
+						// Otherwise, 
 					default:
 						data.push_back(buffer.at(i));
 						break;
@@ -260,8 +263,7 @@ namespace SocketLib
 			}
 			else
 			{
-				// TODO: DEBUG PRINTING
-				std::cout << "Writer disconnection is detected!\n";
+				// writer is disconnected.
 				return false;
 			}
 		}
@@ -271,32 +273,38 @@ namespace SocketLib
 
 	bool SendString(SocketLib::sock socket, std::string msg)
 	{
-		std::cout << "msg = " << msg << std::endl;	// DEBUG
-		std::string buffer{};
+		// append identify character at starting and end points
 		std::string message = '\0' + msg + '\0';
-		std::cout << "message = " << message << std::endl;	// DEBUG
 
+		std::string sending_buffer{};
 		for (size_t i = 0; i < message.size(); i++)
 		{
-			if (buffer.size() >= SEND_BUFFER_MAX)
+			// If sending buffer is full, send it immediately
+			if (sending_buffer.size() >= SEND_BUFFER_MAX)
 			{
-				// Going to send
-				std::cout << "send : buffer = " << buffer << std::endl;	// DEBUG
-				if(const bool is_success = SocketLib::SEND(socket, buffer);
+				// if send if failed,
+				if(const bool is_success = SocketLib::SEND(socket, sending_buffer);
 					is_success == false)
 				{
 					return false;
 				}
-				buffer.clear();
+				// After sending the buffer clear it to store a new part of given string data
+				sending_buffer.clear();
 			}
-			buffer.push_back(message.at(i));
+			
+			// Store a character in buffer
+			sending_buffer.push_back(message.at(i));
 		}
 
-				std::cout << "send : buffer = " << buffer << std::endl;	// DEBUG
-		if(const bool is_success = SocketLib::SEND(socket, buffer);
-			is_success == false)
+		// When loop is finished, if buffer is not empty
+		if (sending_buffer.empty() == false)
 		{
-			return false;
+			// send lastly remain string in buffer.
+			if (const bool is_success = SocketLib::SEND(socket, sending_buffer);
+				is_success == false)
+			{
+				return false;
+			}
 		}
 		
 		return true;
@@ -304,13 +312,16 @@ namespace SocketLib
 
 	bool SEND(SocketLib::sock socket, const std::string& packed_msg)
 	{
+		// @error check@
+		// All given packed message have to have a smaller size than maximum size of send buffer
 		if (packed_msg.size() > SEND_BUFFER_MAX)
 		{
 			return false;
 		}
+		
 		const int bytes_sent = send(socket, packed_msg.c_str(), packed_msg.size(), 0);
 
-		// if transferring is weird,
+		// if transferring is failed,
 		if (bytes_sent <= 0)
 		{
 			std::cout << "errno : " << errno << std::endl;

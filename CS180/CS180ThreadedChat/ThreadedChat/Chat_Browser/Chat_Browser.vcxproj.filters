@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="chat_writer.cpp">
+    <ClCompile Include="chat_browser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
