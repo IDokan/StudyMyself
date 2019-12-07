@@ -51,7 +51,7 @@ namespace SocketLib
 
 	constexpr inline size_t bufferSize = 1024;
 	const inline std::string TERMINATE_CHAR = "&";
-	constexpr inline size_t SEND_BUFFER_MAX = 6;
+	constexpr inline size_t SEND_BUFFER_MAX = 1024;
 
     enum class AddressFamily
     {
