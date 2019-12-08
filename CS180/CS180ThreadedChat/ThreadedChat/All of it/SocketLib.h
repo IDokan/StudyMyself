@@ -49,9 +49,8 @@ namespace SocketLib
     constexpr sock BAD_SOCKET = ~0;
 #endif
 
-	constexpr inline size_t bufferSize = 512;
+	constexpr inline size_t BUFFER_SIZE = 1024;
 	const inline std::string TERMINATE_CHAR = "&";
-	constexpr inline size_t SEND_BUFFER_MAX = 6;
 
     enum class AddressFamily
     {

@@ -48,8 +48,7 @@ int main(int argc, char* argv[])
 	std::string message_from_server;
 	while (should_run)
 	{
-		
-		if (bool is_recv_success = SocketLib::GetInputWithBuffer(browser_socket, message_from_server); 
+		if (bool is_recv_success = SocketLib::GetInputWithBuffer(browser_socket, message_from_server);
 			is_recv_success == true)
 		{
 			std::cout << message_from_server << std::endl;

@@ -56,11 +56,9 @@ int main(int argc, char* argv[])
 		std::getline(std::cin, nick_name);
 	}
 	// Get a chat room information
-	std::cout << "\nDEBUG : Try to get a chat room information\n";	// DEBUG
 	std::string chat_room_info;
 	SocketLib::GetInputWithBuffer(client_socket, chat_room_info);
 	std::cout << chat_room_info << std::endl;
-	std::cout << "\nDEBUG : Success to get a chat room information\n";	// DEBUG
 
 	// Send string later
 	SocketLib::SendString(client_socket, nick_name);

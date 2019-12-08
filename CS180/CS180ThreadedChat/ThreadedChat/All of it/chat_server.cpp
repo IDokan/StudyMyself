@@ -109,7 +109,6 @@ int main(int argc, char* argv[])
 
 		if (identifier.at(0) == WRITER)
 		{
-			std::cout << "DEBUG : Get a WRITER" << std::endl;
 			// Send the number of Browsers and Writers nickname
 			/*
 			Browsers: %d
@@ -123,7 +122,6 @@ int main(int argc, char* argv[])
 		}
 		else if (identifier.at(0) == BROWSER)
 		{
-			std::cout << "DEBUG : Get a BROWSER" << std::endl;
 			DoBrowserThing(new_client_data_socket);
 		}
 
@@ -146,9 +144,6 @@ void DoWriterThing(const SocketLib::sock client_socket)
 	 * it will construct the proper string from it,
 	 * put that string onto the chat room's list,
 	 * and signal the chat room server.
-	 *
-	 *
-	 * TODO: Messages should be prepended with the source writer clients name.
 	 */
 	// Send a chat room information first
 	SendChatroomProperty(client_socket);
@@ -175,11 +170,12 @@ void DoWriterThing(const SocketLib::sock client_socket)
 		if (bool isRecvSuccess = SocketLib::GetInputWithBuffer(client_socket, inputMessage);
 			isRecvSuccess == false)
 			// if receive failed, -> if socket is closed,
-		{
+		{	std::scoped_lock lock(MessageData::mtx);
 			// Add message that notify writer is gone,
-			std::scoped_lock lock(MessageData::mtx);
 			MessageData::history.push_back(nickname + " has left the chat room...");
+			
 			BroadcastMessageToAllBrowsers(MessageData::history.back());
+
 			// Delete writer name in NicknameData::connected_writers_nickname
 			std::scoped_lock lock2(NicknameData::mtx);
 			const auto it = std::find(begin(NicknameData::connected_writers_nickname), end(NicknameData::connected_writers_nickname), nickname);
@@ -188,12 +184,10 @@ void DoWriterThing(const SocketLib::sock client_socket)
 			return;
 		}
 
-		// TODO: DEBUG OUT, SHOULD REMOVED
-		std::cout << "\nDEBUG : " << inputMessage << std::endl;
-
 		{	std::scoped_lock lock(MessageData::mtx);
-		MessageData::history.push_back(nickname + "> " + inputMessage);
-		BroadcastMessageToAllBrowsers(MessageData::history.back());
+			MessageData::history.push_back(nickname + "> " + inputMessage);
+			
+			BroadcastMessageToAllBrowsers(MessageData::history.back());
 		}
 		
 	}

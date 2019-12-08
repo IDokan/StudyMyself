@@ -194,35 +194,35 @@ namespace SocketLib
 
 	void PrintConnectToClient(sockaddr_storage client_address, socklen_t socket_address_storage_size) noexcept
 	{
-		std::array<char, bufferSize> client_hostname{};
-		std::array<char, bufferSize> client_port{};
+		std::array<char, BUFFER_SIZE> client_hostname{};
+		std::array<char, BUFFER_SIZE> client_port{};
 		const auto psocketaddress_information = reinterpret_cast<sockaddr*>(&client_address);
 		// Call getnameinfo() to get a string version of the clients (IP:Port) information
-		getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), bufferSize, &client_port.front(), bufferSize, 0);
+		getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), BUFFER_SIZE, &client_port.front(), BUFFER_SIZE, 0);
 
 		std::cout << "Connected to client at (" << client_hostname.data() << ", " << client_port.data() << ") / ";
 
-		getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), bufferSize, &client_port.front(), bufferSize, NI_NUMERICHOST);
+		getnameinfo(psocketaddress_information, socket_address_storage_size, &client_hostname.front(), BUFFER_SIZE, &client_port.front(), BUFFER_SIZE, NI_NUMERICHOST);
 		std::cout << '(' << client_hostname.data() << ", " << client_port.data() << ")\n\n";
 	}
 
 	void PrintConnectToServer(sockaddr* sock_address_information, socklen_t socket_address_storage_size) noexcept
 	{
-		std::array<char, bufferSize> hostname{};
-		std::array<char, bufferSize> port{};
-		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), bufferSize, &port.front(), bufferSize, NI_NUMERICSERV);
+		std::array<char, BUFFER_SIZE> hostname{};
+		std::array<char, BUFFER_SIZE> port{};
+		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), BUFFER_SIZE, &port.front(), BUFFER_SIZE, NI_NUMERICSERV);
 		std::cout << "Connected to sever at (" << hostname.data() << ", " << port.data() << ") / ";
-		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), bufferSize, &port.front(), bufferSize, NI_NUMERICHOST);
+		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), BUFFER_SIZE, &port.front(), BUFFER_SIZE, NI_NUMERICHOST);
 		std::cout << '(' << hostname.data() << ", " << port.data() << ")\n\n";
 	}
 
 	void PrintCreatingListenerInfo(sockaddr* sock_address_information, socklen_t socket_address_storage_size) noexcept
 	{
-		std::array<char, bufferSize> hostname{};
-		std::array<char, bufferSize> port{};
-		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), bufferSize, &port.front(), bufferSize, NI_NUMERICHOST);
+		std::array<char, BUFFER_SIZE> hostname{};
+		std::array<char, BUFFER_SIZE> port{};
+		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), BUFFER_SIZE, &port.front(), BUFFER_SIZE, NI_NUMERICHOST);
 		std::cout << "Created listening socket on (" << hostname.data() << ", " << port.data() << ") / ";
-		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), bufferSize, &port.front(), bufferSize, NI_NUMERICSERV);
+		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), BUFFER_SIZE, &port.front(), BUFFER_SIZE, NI_NUMERICSERV);
 		std::cout << '(' << hostname.data() << ", " << port.data() << ")\n\n";
 	}
 
@@ -233,14 +233,14 @@ namespace SocketLib
 		str.clear();
 
 		// data buffer is static because even though output buffer is filled, buffer preserve data that come via recv().
-		static std::string data{};
-		std::array<char, bufferSize> buffer{};
-		while (str.empty() == true)
+		std::string data{};
+		std::array<char, BUFFER_SIZE> buffer{};
+		// Is conditional statement problem?
+		while (str.empty() == true || data.empty() == false)
 		{
-			if (long long bytes_received = recv(socket, &buffer.front(), bufferSize, 0);
+			if (long long bytes_received = recv(socket, &buffer.front(), BUFFER_SIZE, 0);
 				bytes_received > 0)
 			{
-
 				for (long long i = 0; i < bytes_received; ++i)
 				{
 					// Parse received data
@@ -248,18 +248,18 @@ namespace SocketLib
 					{
 						// If the char is identifying character,
 					case '\0':
-						std::cout << "\nDEBUG : null terminator detected\n";    // DEBUG
-						if (data.empty() == false)
+						if (str.empty() == true)
 						{
-							std::cout << "\nDEBUG : currently, str = " << str << ", data = " << data << std::endl;    // DEBUG
 							str = data;
-							return true;
+						}
+						else if (data.empty() == false)
+						{
+							str += '\n' + data;
 						}
 						data.clear();
 						break;
 						// Otherwise, 
 					default:
-						std::cout << "\nDEBUG : index = " << i << "buffer.at(i) = " << buffer.at(static_cast<size_t>(i)) << std::endl;;    // DEBUG
 						data.push_back(buffer.at(static_cast<size_t>(i)));
 						break;
 					}
@@ -268,7 +268,6 @@ namespace SocketLib
 			else
 			{
 				// writer is disconnected.
-				std::cout << "\nDEBUG : Writer disconnection is detected!\n";	// DEBUG
 				return false;
 			}
 		}
@@ -279,17 +278,14 @@ namespace SocketLib
 	bool SendString(SocketLib::sock socket, std::string msg)
 	{
 		// append identify character at starting and end points
-		std::cout << "\nDEBUG : msg = " << msg << std::endl;	// DEBUG
 		std::string message = '\0' + msg + '\0';
-		std::cout << "\nDEBUG : message = " << message << std::endl;	// DEBUG
 
 		std::string sending_buffer{};
 		for (size_t i = 0; i < message.size(); i++)
 		{
 			// If sending buffer is full, send it immediately
-			if (sending_buffer.size() >= SEND_BUFFER_MAX)
+			if (sending_buffer.size() >= BUFFER_SIZE)
 			{
-				std::cout << "\nDEBUG : send : buffer = " << sending_buffer << std::endl;	// DEBUG
 				// if send if failed,
 				if (const bool is_success = SocketLib::SEND(socket, sending_buffer);
 					is_success == false)
@@ -305,8 +301,8 @@ namespace SocketLib
 		}
 
 		// When loop is finished, if buffer is not empty
-		std::cout << "\nDEBUG : send : buffer = " << sending_buffer << std::endl;	// DEBUG
-		// if (sending_buffer.empty() == false)
+		// TODO: NOT SURE it works, just test it.
+		if (sending_buffer.empty() == false)
 		{
 			// send lastly remain string in buffer.
 			if (const bool is_success = SocketLib::SEND(socket, sending_buffer);
@@ -323,7 +319,7 @@ namespace SocketLib
 	{
 		// @error check@
 		// All given packed message have to have a smaller size than maximum size of send buffer
-		if (packed_msg.size() > SEND_BUFFER_MAX)
+		if (packed_msg.size() > BUFFER_SIZE)
 		{
 			return false;
 		}
