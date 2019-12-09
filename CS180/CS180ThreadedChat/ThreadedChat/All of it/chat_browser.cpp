@@ -41,13 +41,14 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	// '1' means I am writer
+	// Send message Who I am
 	const std::string identifierBuffer = "browser";
 	SocketLib::SendString(browser_socket, identifierBuffer);
-	
+
 	std::string message_from_server;
 	while (should_run)
 	{
+
 		if (bool is_recv_success = SocketLib::GetInputWithBuffer(browser_socket, message_from_server);
 			is_recv_success == true)
 		{
@@ -58,7 +59,6 @@ int main(int argc, char* argv[])
 			should_run = false;
 		}
 	} //If there are no more messages to receive
-	std::cout << "browser is terminated\n ";
 	SocketLib::CloseSocket(browser_socket);
 	return 0;
 }

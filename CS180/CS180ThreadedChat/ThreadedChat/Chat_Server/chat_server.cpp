@@ -21,11 +21,6 @@
 
 namespace
 {
-	constexpr char WRITER = 'w';
-	constexpr char BROWSER = 'b';
-	constexpr int bufferSize = 512;
-
-	/* TODO: Make sure these things. Currently, Not Sure all of it */
 	// The chat server must keep track of all connected writer clients names.
 	// I guess it will be used for display Writers: <Who>, <Who>
 	namespace NicknameData
@@ -46,18 +41,6 @@ namespace
 		std::mutex mtx;
 	};
 }
-// TODO: Static struc? or idividual variables
-/*		For example,
-
-	std::vector<std::string> connected_writers_nickname;
-	std::mutex nickname_mutex;
-
-	...
-
-	std::vector<Message> history;
-	std::mutex history_mutex;
-*/
-
 
 /* Helper functions */
 void DoWriterThing(const SocketLib::sock client_socket);
@@ -107,28 +90,16 @@ int main(int argc, char* argv[])
 			continue;
 		}
 
-		if (identifier.at(0) == WRITER)
+		if (identifier.at(0) == SocketLib::WRITER)
 		{
-			// Send the number of Browsers and Writers nickname
-			/*
-			Browsers: %d
-			 Writers:
-			*/
-			//TODO: Where get client's nickname?
-
 			// Start thread!
 			std::thread writerThread{ DoWriterThing, new_client_data_socket };
 			writerThread.detach();
 		}
-		else if (identifier.at(0) == BROWSER)
+		else if (identifier.at(0) == SocketLib::BROWSER)
 		{
 			DoBrowserThing(new_client_data_socket);
 		}
-
-
-		// TODO: There should be a server generated message each time a new writer client joins or exits.
-		//When a new writer joins the chat room
-		//if()  
 	}
 }
 
@@ -145,7 +116,8 @@ void DoWriterThing(const SocketLib::sock client_socket)
 	 * put that string onto the chat room's list,
 	 * and signal the chat room server.
 	 */
-	// Send a chat room information first
+
+	 // Send a chat room information first
 	SendChatroomProperty(client_socket);
 
 	// Get a nickname later
@@ -170,10 +142,11 @@ void DoWriterThing(const SocketLib::sock client_socket)
 		if (bool isRecvSuccess = SocketLib::GetInputWithBuffer(client_socket, inputMessage);
 			isRecvSuccess == false)
 			// if receive failed, -> if socket is closed,
-		{	std::scoped_lock lock(MessageData::mtx);
+		{
+			std::scoped_lock lock(MessageData::mtx);
 			// Add message that notify writer is gone,
 			MessageData::history.push_back(nickname + " has left the chat room...");
-			
+
 			BroadcastMessageToAllBrowsers(MessageData::history.back());
 
 			// Delete writer name in NicknameData::connected_writers_nickname
@@ -185,11 +158,11 @@ void DoWriterThing(const SocketLib::sock client_socket)
 		}
 
 		{	std::scoped_lock lock(MessageData::mtx);
-			MessageData::history.push_back(nickname + "> " + inputMessage);
-			
-			BroadcastMessageToAllBrowsers(MessageData::history.back());
+		MessageData::history.push_back(nickname + "> " + inputMessage);
+
+		BroadcastMessageToAllBrowsers(MessageData::history.back());
 		}
-		
+
 	}
 }
 
@@ -199,13 +172,11 @@ void DoBrowserThing(SocketLib::sock client_socket)
 	/*	0. Current Status output
 	 *	1. Send all message history when connected,
 	 *	2. Add it to the vector that named connected_browser
-	 *
 	 */
 
+	 //Sends the current number of browsers and the list of writers nickname
 	SendChatroomProperty(client_socket);
 
-
-	// TODO: I'm not sure history should be locked.....
 	std::scoped_lock lock(MessageData::mtx);
 	for (auto& msg : MessageData::history)
 	{

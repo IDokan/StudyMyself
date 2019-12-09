@@ -15,10 +15,11 @@
 #include <array>
 #include <string>
 #include "SocketLib.h"
-/*Global variables*/
-int should_run = true;
 
-// TODO: If nickname is missing, make a connecting & printing connection information first, after then get a nick name
+/* Global variables */
+int should_run = true;
+/* End of Global variable*/
+
 int main(int argc, char* argv[])
 {
 	// If input is incorrect,
@@ -41,7 +42,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	// "writer" means I am writer
+	// Send message Who I am
 	const std::string identifierBuffer = "writer";
 	SocketLib::SendString(client_socket, identifierBuffer);
 

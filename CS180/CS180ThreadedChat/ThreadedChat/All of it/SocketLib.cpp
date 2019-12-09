@@ -220,9 +220,9 @@ namespace SocketLib
 	{
 		std::array<char, BUFFER_SIZE> hostname{};
 		std::array<char, BUFFER_SIZE> port{};
-		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), BUFFER_SIZE, &port.front(), BUFFER_SIZE, NI_NUMERICHOST);
-		std::cout << "Created listening socket on (" << hostname.data() << ", " << port.data() << ") / ";
 		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), BUFFER_SIZE, &port.front(), BUFFER_SIZE, NI_NUMERICSERV);
+		std::cout << "Created listening socket on (" << hostname.data() << ", " << port.data() << ") / ";
+		getnameinfo(sock_address_information, socket_address_storage_size, &hostname.front(), BUFFER_SIZE, &port.front(), BUFFER_SIZE, NI_NUMERICHOST);
 		std::cout << '(' << hostname.data() << ", " << port.data() << ")\n\n";
 	}
 
@@ -247,7 +247,7 @@ namespace SocketLib
 					switch (buffer.at(static_cast<size_t>(i)))
 					{
 						// If the char is identifying character,
-					case '\0':
+					case TERMINATE_CHAR:
 						if (str.empty() == true)
 						{
 							str = data;
@@ -278,7 +278,7 @@ namespace SocketLib
 	bool SendString(SocketLib::sock socket, std::string msg)
 	{
 		// append identify character at starting and end points
-		std::string message = '\0' + msg + '\0';
+		std::string message = TERMINATE_CHAR + msg + TERMINATE_CHAR;
 
 		std::string sending_buffer{};
 		for (size_t i = 0; i < message.size(); i++)
@@ -301,7 +301,6 @@ namespace SocketLib
 		}
 
 		// When loop is finished, if buffer is not empty
-		// TODO: NOT SURE it works, just test it.
 		if (sending_buffer.empty() == false)
 		{
 			// send lastly remain string in buffer.

@@ -30,68 +30,71 @@ namespace SocketLib
 {
 #ifdef _WIN32
 
-    using sock = SOCKET; // Although sockets are int's on unix,
-                         // windows uses it's own typedef of
-                         // SOCKET to represent them. If you look
-                         // in the Winsock2 source code, you'll see
-                         // that it is just a typedef for unsigned int, but
-                         // there is absolutely no guarantee that it
-                         // won't change in a later version.
-                         // therefore, in order to avoid confusion,
-                         // this library will create it's own basic
-                         // socket descriptor typedef
+	using sock = SOCKET; // Although sockets are int's on unix,
+						 // windows uses it's own typedef of
+						 // SOCKET to represent them. If you look
+						 // in the Winsock2 source code, you'll see
+						 // that it is just a typedef for unsigned int, but
+						 // there is absolutely no guarantee that it
+						 // won't change in a later version.
+						 // therefore, in order to avoid confusion,
+						 // this library will create it's own basic
+						 // socket descriptor typedef
 
-    // Use Window's macro for invalid socket, so that it matches
-    // with their SOCKET type.
-    constexpr sock BAD_SOCKET = INVALID_SOCKET;
+	// Use Window's macro for invalid socket, so that it matches
+	// with their SOCKET type.
+	constexpr sock BAD_SOCKET = INVALID_SOCKET;
 #else // UNIX/Linux
-    using sock = int;
-    constexpr sock BAD_SOCKET = ~0;
+	using sock = int;
+	constexpr sock BAD_SOCKET = ~0;
 #endif
 
 	constexpr inline size_t BUFFER_SIZE = 1024;
-	const inline std::string TERMINATE_CHAR = "&";
-
-    enum class AddressFamily
-    {
-        IPv4,               // To use IP version 4 like 220.69.157.148
-        IPv6,               // To use IP version 6 like fe80::4176:ad1b:9b82:33b7%7
-        HostPreferred,      // Use what the host machine prefers
-    };
-
-    /**
-     * \brief Open a listening socket, to be used by servers to accept client connection requests.
-     * \param service which port service to create the socket on
-     * \param address_family use this to pick which version of the IP you want the listening socket to work with.
-     * \return socket with the host's ip address and the provided port value or BAD_SOCKET on failure.
-     */
-     sock OpenListener(const char* service, AddressFamily addressFamily = AddressFamily::HostPreferred);
+	const inline char TERMINATE_CHAR = '\0';
+	constexpr inline char WRITER = 'w';
+	constexpr inline char BROWSER = 'b';
 
 
-    /**
-     * \brief Open a client socket, to be used by clients to make a connection request and then continue to use it to
-     * send/receive data from the server.
-     * \param host provide a way to address the machine to connect to, which could be an ip address or domain name.
-     * \param service provide the port/service associated with the process to connect to on the   machine to  connect to.
-     * \return socket with the server's ip address and the provided port value or BAD_SOCKET on failure.
-     */
-     sock OpenClientSocket(const char* host, const char* service);
+	enum class AddressFamily
+	{
+		IPv4,               // To use IP version 4 like 220.69.157.148
+		IPv6,               // To use IP version 6 like fe80::4176:ad1b:9b82:33b7%7
+		HostPreferred,      // Use what the host machine prefers
+	};
+
+	/**
+	 * \brief Open a listening socket, to be used by servers to accept client connection requests.
+	 * \param service which port service to create the socket on
+	 * \param address_family use this to pick which version of the IP you want the listening socket to work with.
+	 * \return socket with the host's ip address and the provided port value or BAD_SOCKET on failure.
+	 */
+	sock OpenListener(const char* service, AddressFamily addressFamily = AddressFamily::HostPreferred);
 
 
-    /**
-     * \brief Use this to close and free up the resources associated with the provided socket.
-     * \param socket_handle should be a currently active socket
-     */
-     void CloseSocket(sock sock_handle);
+	/**
+	 * \brief Open a client socket, to be used by clients to make a connection request and then continue to use it to
+	 * send/receive data from the server.
+	 * \param host provide a way to address the machine to connect to, which could be an ip address or domain name.
+	 * \param service provide the port/service associated with the process to connect to on the   machine to  connect to.
+	 * \return socket with the server's ip address and the provided port value or BAD_SOCKET on failure.
+	 */
+	sock OpenClientSocket(const char* host, const char* service);
 
-	 void PrintConnectToClient(sockaddr_storage client_address, socklen_t socket_address_storage_size) noexcept;
-	
-	 void PrintConnectToServer(sockaddr* sock_address_information, socklen_t socket_address_storage_size) noexcept;
-	 void PrintCreatingListenerInfo(sockaddr* sock_address_information, socklen_t socket_address_storage_size) noexcept;
 
-	 bool GetInputWithBuffer(const SocketLib::sock socket, std::string& str);
+	/**
+	 * \brief Use this to close and free up the resources associated with the provided socket.
+	 * \param socket_handle should be a currently active socket
+	 */
+	void CloseSocket(sock sock_handle);
 
-	 bool SendString(SocketLib::sock socket, std::string msg);
+	void PrintConnectToClient(sockaddr_storage client_address, socklen_t socket_address_storage_size) noexcept;
 
-	 bool SEND(SocketLib::sock socket, const std::string& packed_msg);
+	void PrintConnectToServer(sockaddr* sock_address_information, socklen_t socket_address_storage_size) noexcept;
+	void PrintCreatingListenerInfo(sockaddr* sock_address_information, socklen_t socket_address_storage_size) noexcept;
+
+	bool GetInputWithBuffer(const SocketLib::sock socket, std::string& str);
+
+	bool SendString(SocketLib::sock socket, std::string msg);
+
+	bool SEND(SocketLib::sock socket, const std::string& packed_msg);
 }
