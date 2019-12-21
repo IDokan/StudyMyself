@@ -1,4 +1,0 @@
-Original string = ccc
-Compressed string = 1011'0101'1010'1100'
-Uncompressed string = ccc
-Strings Match
