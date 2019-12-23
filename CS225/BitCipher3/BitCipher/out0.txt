@@ -1,0 +1,4 @@
+Original string = c
+Compressed string = 0010'0000'0110'0011'0000'0000'0100'0000'
+Uncompressed string = c
+Strings Match
