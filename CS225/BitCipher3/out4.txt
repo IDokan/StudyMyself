@@ -1,0 +1,4 @@
+Original string = hello
+Compressed string = 0010'0000'0110'1100'0110'0101'0110'1000'0110'1111'0000'0000'1011'0001'0111'0000'
+Uncompressed string = hello
+Strings Match

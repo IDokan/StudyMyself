@@ -63,7 +63,8 @@ void test4() { runTest( "hello" ); }
 void test5() { runTest( "xaxa" ); }
 void test6() { runTest( "abcdefghijklmnopqrstuvwxyz" ); }
 void test7() { runTest( "kdjasfhkdslfhksdjhfkldsfhlskdfjh" ); }
-void test8() { runTest( "aardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvark" ); }
+void test8() { runTest("aardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvarkaardvark"); }
+void testMine() { runTest("Hello World"); }
 
 
 int main (int argc, char ** argv) {
@@ -71,7 +72,7 @@ int main (int argc, char ** argv) {
 
 	typedef void(*Test)(void);
 	Test Tests[] = {
-		test0,	test1, test2, test3, test4, test5, test6, test7, test8
+		test0,	test1, test2, test3, test4, test5, test6, test7, test8, testMine,
 	};
 	int numTests = static_cast<int>(sizeof(Tests) / sizeof(*Tests));
 	if (argc > 1) {

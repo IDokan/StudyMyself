@@ -12,7 +12,7 @@ Creation date: 12.22.2019
 
 #include <iostream>
 #include <map>				// std::map
-#include <vector>
+#include <vector>			// In order to inherite it
 #include <algorithm>		// std::for_each
 #include "cipher.h"
 
