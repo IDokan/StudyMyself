@@ -12,7 +12,8 @@ Creation date: 12.22.2019
 
 #include <iostream>
 #include <map>				// std::map
-#include <vector>
+#include <utility>
+#include <vector>			// In order to inherite it
 #include <algorithm>		// std::for_each
 #include "cipher.h"
 
@@ -127,10 +128,11 @@ private:
 		std::vector<std::pair<size_t, char>> sortedData;
 
 		sortedData.reserve(dictionary.size());
-		for (auto& it : dictionary)
-		{
-			sortedData.emplace_back(it.second, it.first);
-		}
+		std::for_each(std::begin(dictionary), std::end(dictionary), [&](const std::pair<size_t, char>& it)
+			{
+				sortedData.emplace_back(it.second, it.first);
+			}
+		);
 
 		std::stable_sort(sortedData.begin(), sortedData.end(), [&](const std::pair<size_t, char>& lhs, const std::pair<size_t, char>& rhs)
 			{
@@ -171,7 +173,7 @@ private:
 			return *this;
 		}
 
-		bool EndOfData() const noexcept
+		[[nodiscard]] bool EndOfData() const noexcept
 		{
 			return (byte_pos) >= (stream.size());
 		}
@@ -245,17 +247,16 @@ char GetLetter(int groupIndex, int charIndex) {
 	return data[charIndexFromGroup + charIndex];
 }
 
-
 std::string decode(std::vector<char> compressed) {
-	BitStream stream(compressed);
+	BitStream stream(std::move(compressed));
 	int index = stream.UpdateDictionary();
 	std::string uncompressed;
 
-	int bitsPerGroup = numBits(GetNumGroups() - 1);
+	const int bitsPerGroup = numBits(GetNumGroups() - 1);
 
 	while (stream[index].EndOfData() == false) {
-		int groupIndex = ReadBits(stream, index, bitsPerGroup);
-		int charIndex = ReadBits(stream, index, groupIndex + 1);	// charIndex uses groupIndex + 1 bits to store it
+		const int groupIndex = ReadBits(stream, index, bitsPerGroup);
+		const int charIndex = ReadBits(stream, index, groupIndex + 1);	// charIndex uses groupIndex + 1 bits to store it
 		uncompressed += GetLetter(groupIndex, charIndex);
 	}
 	return uncompressed;
@@ -265,7 +266,7 @@ std::vector<char> encode(std::string uncompressed) {
 	BitStream stream;
 	stream.MakeDictionary(uncompressed);
 	int groupIndex, charIndex;
-	int bitsPerGroup = numBits(GetNumGroups() - 1);
+	const int bitsPerGroup = numBits(GetNumGroups() - 1);
 	int index = stream.size() * BitStream::sizeOfChar;
 
 
@@ -275,5 +276,5 @@ std::vector<char> encode(std::string uncompressed) {
 			SetBits(stream, index, charIndex, groupIndex + 1); // charIndex uses groupIndex + 1 bits to store it
 		}
 	}
-	return stream;
+	return std::move(stream);
 }

@@ -1,0 +1,4 @@
+Original string = xaxa
+Compressed string = 0010'0000'0110'0001'0111'1000'0000'0000'1000'1100'0100'0000'
+Uncompressed string = xaxa
+Strings Match

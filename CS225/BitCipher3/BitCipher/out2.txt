@@ -1,0 +1,4 @@
+Original string = ccc
+Compressed string = 0010'0000'0110'0011'0000'0000'0101'0100'
+Uncompressed string = ccc
+Strings Match
